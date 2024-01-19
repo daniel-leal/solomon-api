@@ -1,5 +1,8 @@
 # 🤑 Solomon
 
+[![Build Status](https://github.com/daniel-leal/solomon-api/actions/workflows/ci.yml/badge.svg)](https://github.com/daniel-leal/solomon-api/actions)
+[![Coverage Status](https://coveralls.io/repos/github/daniel-leal/solomon/badge.svg?branch=main)](https://coveralls.io/github/daniel-leal/solomon?branch=main)
+
 Solomon is a personal finance application designed to help you manage your finances effectively.
 
 ## 🚀 Getting Started
