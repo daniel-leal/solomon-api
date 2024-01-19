@@ -17,13 +17,13 @@ These instructions will get you a copy of the project up and running on your loc
 1. Clone the repository:
 
 ```sh
-git clone <repository_url>
+git clone https://github.com/daniel-leal/solomon-api
 ```
 
 2. Naviagate to the project directory
 
 ```sh
-cd <project_directory>
+cd solomon-api
 ```
 
 3. Create virtual env
