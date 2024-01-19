@@ -50,6 +50,13 @@ jobs:
       run: |
         pytest --cov=./
 
+    - name: Coveralls
+      run: |
+        pip install coveralls
+        coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Convert coverage to lcov format
       run: |
         coverage xml
