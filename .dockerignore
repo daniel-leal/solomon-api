@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+.vscode/
+local_config/
+node_modules/
+vendor/
+*.bak
+*.swp
+.git/
+.idea/
+.venv/
