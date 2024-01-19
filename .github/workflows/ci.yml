@@ -56,21 +56,3 @@ jobs:
         coveralls
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Convert coverage to lcov format
-      run: |
-        coverage xml
-        python-cobertura-to-lcov.py coverage.xml > lcov.info
-
-    - name: Coveralls Parallel
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        flag-name: run-3.11
-        parallel: true
-
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
