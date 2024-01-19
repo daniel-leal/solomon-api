@@ -4,6 +4,9 @@ docker-build:
 docker-up:
 	docker-compose up -d
 
+rollback:
+	alembic downgrade -1
+
 migrate:
 	alembic upgrade head
 

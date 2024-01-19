@@ -11,9 +11,9 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### 🗒️ Prerequisites
 
-- Python 3.11
-- Docker
-- Docker Compose
+- 🐍 Python 3.11
+- 🐳 Docker / Docker Compose
+- 🐘 PostgreSQL 12.1
 
 ### 🐳 Running the Project Locally with docker
 
@@ -29,41 +29,38 @@ git clone https://github.com/daniel-leal/solomon-api
 cd solomon-api
 ```
 
-3. Create virtual env
+3. Build the docker
+```sh
+make docker-build
+```
+
+4. Run the docker application
+```sh
+make docker-up
+```
+
+### 🐍 If you want to run locally:
+
+1. Create virtual env
 
 ```sh
 python -m venv .venv
 ```
 
-4. Activate virtual env
+2. Activate virtual env
+
 ```sh
 source .venv/bin/activate
 ```
 
-5. Build the docker
-```sh
-make docker-build
-```
-
-6. Run the docker application
-```sh
-make docker-up
-```
-
-
-7. Run the migrations
-```sh
-make migrate
-```
-
-The application will be available at (http://localhost:8000).
-
-
-If you want to run locally:
+3. Run the application
 
 ```sh
 make run-local
 ```
+
+
+The application will be available at (http://localhost:8000).
 
 
 ### ✅ Running the Tests
@@ -80,10 +77,20 @@ To generate a coverage report use the following command:
 make test-coverage
 ```
 
-### ⚙️ Generate Migrations
+### ⚙️ Migrations
+- Running migrations
+```sh
+make migrate
+```
 
+- Create migration
 ```sh
 make migration name="<name of migration>"
+```
+
+- Rollback latest migration
+```sh
+make rollback
 ```
 
 ### Contributing
