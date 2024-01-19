@@ -15,7 +15,7 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}
-      EXPIRES_AT: ${{ secrets.EXPIRES_AT }}}
+      EXPIRES_AT: 84600
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     services:
