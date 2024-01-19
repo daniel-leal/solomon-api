@@ -47,7 +47,7 @@ def is_password_valid(plain_password: str, hashed_password: str) -> bool:
 def generate_token(
     user_id: str,
     secret_key: str = SECRET_KEY,
-    expires_delta: str = EXPIRES_AT,
+    expires_delta: int = EXPIRES_AT,
 ) -> str:
     """
     Generates a JWT token
@@ -69,8 +69,7 @@ def generate_token(
     payload = {
         "sub": user_id,
         "iat": datetime.datetime.utcnow(),
-        "exp": datetime.datetime.utcnow()
-        + datetime.timedelta(seconds=int(expires_delta)),
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_delta),
     }
 
     token = jwt.encode(payload, secret_key, algorithm="HS256")

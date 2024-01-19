@@ -10,5 +10,5 @@ else:
     load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-EXPIRES_AT = os.getenv("EXPIRES_AT", "")
+EXPIRES_AT = int(os.getenv("EXPIRES_AT", ""))
 SECRET_KEY = os.getenv("SECRET_KEY", "")
