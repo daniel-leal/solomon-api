@@ -1,7 +1,7 @@
 from fastapi import Depends
 
+from api.solomon.auth.application.security import generate_hashed_password
 from api.solomon.auth.presentation.models import UserCreate, UserCreateResponse
-from api.solomon.auth.utils import generate_hashed_password
 from api.solomon.users.domain.exceptions import UserAlreadyExists
 from api.solomon.users.infrastructure.factories import get_user_repository
 from api.solomon.users.infrastructure.repositories import UserRepository

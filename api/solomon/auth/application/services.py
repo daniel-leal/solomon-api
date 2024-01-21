@@ -1,10 +1,19 @@
 from fastapi import Depends
+from fastapi.security import HTTPBearer
 
+from api.solomon.auth.application.security import (
+    generate_token,
+    is_password_valid,
+)
 from api.solomon.auth.domain.exceptions import AuthenticationError
-from api.solomon.auth.presentation.models import LoginCreate, UserLoggedinResponse
-from api.solomon.auth.utils import generate_token, is_password_valid
+from api.solomon.auth.presentation.models import (
+    LoginCreate,
+    UserLoggedinResponse,
+)
 from api.solomon.users.infrastructure.factories import get_user_repository
 from api.solomon.users.infrastructure.repositories import UserRepository
+
+security = HTTPBearer()
 
 
 class AuthService:
