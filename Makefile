@@ -4,6 +4,9 @@ docker-build:
 docker-up:
 	docker-compose up -d
 
+docker-database:
+	docker-compose up -d db
+
 rollback:
 	alembic downgrade -1
 

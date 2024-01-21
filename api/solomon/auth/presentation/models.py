@@ -1,6 +1,13 @@
 from pydantic import BaseModel
 
 
+class UserTokenAuthenticated(BaseModel):
+    id: str
+    username: str
+    email: str
+    token: str
+
+
 class UserCreate(BaseModel):
     username: str
     email: str

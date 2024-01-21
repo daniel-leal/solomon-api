@@ -2,10 +2,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from api.solomon.auth.application.security import generate_hashed_password
 from api.solomon.auth.application.services import AuthService
 from api.solomon.auth.domain.exceptions import AuthenticationError
 from api.solomon.auth.presentation.models import LoginCreate, UserLoggedinResponse
-from api.solomon.auth.utils import generate_hashed_password
 from api.solomon.users.infrastructure.repositories import UserRepository
 
 

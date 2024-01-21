@@ -2,9 +2,9 @@ from unittest.mock import Mock
 
 from fastapi_sqlalchemy import db
 
+from api.solomon.auth.application.security import generate_hashed_password
 from api.solomon.auth.application.services import get_auth_service
 from api.solomon.auth.presentation.models import UserCreate
-from api.solomon.auth.utils import generate_hashed_password
 from api.solomon.users.application.services import get_user_service
 
 
@@ -136,3 +136,32 @@ def test_login_exception(client):
     assert response.json() == {"detail": "Forced Exception"}
 
     app.dependency_overrides = {}
+
+
+def test_get_current_user(client, user_factory):
+    with db():
+        password = "123456"
+        user = user_factory.create(
+            username="John Doe", hashed_password=generate_hashed_password(password)
+        )
+
+        body = {
+            "username": user.username,
+            "password": password,
+        }
+
+        response = client.post("/auth/login", json=body)
+
+        token = response.json()["access_token"]
+
+        response = client.get(
+            "/auth/profile", headers={"Authorization": f"Bearer {token}"}
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "id": str(user.id),
+            "username": user.username,
+            "email": user.email,
+            "token": token,
+        }

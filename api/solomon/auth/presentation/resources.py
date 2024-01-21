@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
+from api.solomon.auth.application.security import get_current_user
 from api.solomon.auth.application.services import AuthService, get_auth_service
 from api.solomon.auth.domain.exceptions import AuthenticationError
 from api.solomon.auth.presentation.models import (
@@ -7,6 +8,7 @@ from api.solomon.auth.presentation.models import (
     UserCreate,
     UserCreateResponse,
     UserLoggedinResponse,
+    UserTokenAuthenticated,
 )
 from api.solomon.users.application.services import UserService, get_user_service
 from api.solomon.users.domain.exceptions import UserAlreadyExists
@@ -88,3 +90,22 @@ async def login(
         raise HTTPException(status_code=401, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/profile", response_model=UserTokenAuthenticated)
+async def profile(current_user: UserLoggedinResponse = Depends(get_current_user)):
+    """
+    Endpoint to get the profile of the currently authenticated user.
+
+    Parameters
+    ----------
+    current_user : UserLoggedinResponse
+        The currently authenticated user, obtained from the `get_current_user` dependency.
+
+    Returns
+    -------
+    UserLoggedinResponse
+        The profile of the currently authenticated user.
+    """
+
+    return current_user
