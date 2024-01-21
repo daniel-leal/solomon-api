@@ -1,13 +1,12 @@
-from fastapi import Depends
-
 from api.solomon.auth.application.security import generate_hashed_password
 from api.solomon.auth.presentation.models import UserCreate, UserCreateResponse
 from api.solomon.users.domain.exceptions import UserAlreadyExists
-from api.solomon.users.infrastructure.factories import get_user_repository
 from api.solomon.users.infrastructure.repositories import UserRepository
 
 
 class UserService:
+    """Users services"""
+
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
@@ -38,10 +37,3 @@ class UserService:
             username=user.username, email=user.email, hashed_password=hashed_password
         )
         return UserCreateResponse(username=db_user.username, email=db_user.email)
-
-
-def get_user_service(
-    user_repository: UserRepository = Depends(get_user_repository),
-) -> UserService:
-    """Factory for UserService"""
-    return UserService(user_repository)

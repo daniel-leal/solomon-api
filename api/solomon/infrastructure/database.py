@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4
 
 from fastapi import Depends
 from fastapi_sqlalchemy import db
@@ -34,7 +34,7 @@ class BaseModel(Base):
 
     __abstract__ = True
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=False), primary_key=True, default=uuid4)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), default=func.now(), onupdate=func.now()

@@ -2,10 +2,10 @@ from unittest.mock import Mock
 
 from fastapi_sqlalchemy import db
 
+from api.solomon.auth.application.factories import get_auth_service
 from api.solomon.auth.application.security import generate_hashed_password
-from api.solomon.auth.application.services import get_auth_service
 from api.solomon.auth.presentation.models import UserCreate
-from api.solomon.users.application.services import get_user_service
+from api.solomon.users.application.factories import get_user_service
 
 
 def test_register_user(client):
@@ -160,7 +160,7 @@ def test_get_current_user(client, user_factory):
 
         assert response.status_code == 200
         assert response.json() == {
-            "id": str(user.id),
+            "id": user.id,
             "username": user.username,
             "email": user.email,
             "token": token,
