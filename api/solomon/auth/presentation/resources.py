@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
+from api.solomon.auth.application.factories import get_auth_service
 from api.solomon.auth.application.security import get_current_user
-from api.solomon.auth.application.services import AuthService, get_auth_service
+from api.solomon.auth.application.services import AuthService
 from api.solomon.auth.domain.exceptions import AuthenticationError
 from api.solomon.auth.presentation.models import (
     LoginCreate,
@@ -10,7 +11,8 @@ from api.solomon.auth.presentation.models import (
     UserLoggedinResponse,
     UserTokenAuthenticated,
 )
-from api.solomon.users.application.services import UserService, get_user_service
+from api.solomon.users.application.factories import get_user_service
+from api.solomon.users.application.services import UserService
 from api.solomon.users.domain.exceptions import UserAlreadyExists
 
 router = APIRouter()

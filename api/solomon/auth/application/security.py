@@ -171,7 +171,7 @@ async def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return UserTokenAuthenticated(
-            id=str(user.id),
+            id=user.id,
             username=user.username,
             email=user.email,
             token=token.credentials,

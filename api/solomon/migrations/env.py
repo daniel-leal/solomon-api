@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from api.solomon.infrastructure.config import DATABASE_URL
 from api.solomon.infrastructure.database import BaseModel
-from api.solomon.models import User  # noqa
+from api.solomon.models import *  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

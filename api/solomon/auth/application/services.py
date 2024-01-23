@@ -1,4 +1,3 @@
-from fastapi import Depends
 from fastapi.security import HTTPBearer
 
 from api.solomon.auth.application.security import (
@@ -10,7 +9,6 @@ from api.solomon.auth.presentation.models import (
     LoginCreate,
     UserLoggedinResponse,
 )
-from api.solomon.users.infrastructure.factories import get_user_repository
 from api.solomon.users.infrastructure.repositories import UserRepository
 
 security = HTTPBearer()
@@ -42,13 +40,8 @@ class AuthService:
         ):
             raise AuthenticationError("Invalid username or password!")
 
-        token = generate_token(str(user.id))
+        token = generate_token(user.id)
 
-        return UserLoggedinResponse(access_token=token, token_type="bearer")
-
-
-def get_auth_service(
-    user_repository: UserRepository = Depends(get_user_repository),
-) -> AuthService:
-    """Factory for AuthService"""
-    return AuthService(user_repository)
+        return UserLoggedinResponse(
+            user_id=user.id, access_token=token, token_type="bearer"
+        )
