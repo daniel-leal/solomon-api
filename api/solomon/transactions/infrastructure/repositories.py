@@ -1,6 +1,6 @@
 from typing import List
 
-from api.solomon.transactions.domain.models import CreditCard
+from api.solomon.transactions.domain.models import Category, CreditCard
 
 
 class CreditCardRepository:
@@ -44,3 +44,18 @@ class CreditCardRepository:
         self.session.delete(credit_card)
         self.commit()
         return credit_card
+
+
+class CategoryRepository:
+    """Categories repository. It is used to interact with the database."""
+
+    def __init__(self, session):
+        self.session = session
+
+    def get_all(self) -> List[Category]:
+        """Get all Credit Cards."""
+        return self.session.query(Category).all()
+
+    def get_by_id(self, id: str) -> Category | None:
+        """Get a Credit Card by id."""
+        return self.session.query(Category).filter_by(id=id).first()

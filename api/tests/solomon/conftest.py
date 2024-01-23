@@ -11,6 +11,7 @@ from api.solomon.infrastructure.config import DATABASE_URL
 from api.solomon.infrastructure.database import Base, get_db_session
 from api.solomon.main import app
 from api.solomon.users.domain.models import User
+from api.tests.solomon.factories.category_factory import CategoryFactory
 from api.tests.solomon.factories.credit_card_factory import CreditCardFactory
 from api.tests.solomon.factories.user_factory import UserFactory
 
@@ -92,3 +93,4 @@ def current_user(current_user_token) -> User:
 
 register(UserFactory)
 register(CreditCardFactory)
+register(CategoryFactory)
