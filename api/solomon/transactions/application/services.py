@@ -1,14 +1,18 @@
 from typing import List
 
-from api.solomon.transactions.domain.exceptions import CreditCardNotFound
-from api.solomon.transactions.domain.models import CreditCard
+from api.solomon.transactions.domain.exceptions import (
+    CategoryNotFound,
+    CreditCardNotFound,
+)
+from api.solomon.transactions.domain.models import Category, CreditCard
 from api.solomon.transactions.infrastructure.repositories import (
+    CategoryRepository,
     CreditCardRepository,
 )
 
 
 class CreditCardService:
-    """CreditCards services"""
+    """Service for handling CreditCard business logic."""
 
     def __init__(self, credit_card_repository: CreditCardRepository):
         self.credit_card_repository = credit_card_repository
@@ -109,3 +113,30 @@ class CreditCardService:
         credit_card = self.get_credit_card(credit_card_id, user_id)
         self.credit_card_repository.delete(credit_card=credit_card)
         return credit_card
+
+
+class CategoryService:
+    """Service for handling Category business logic."""
+
+    def __init__(self, category_repository: CategoryRepository):
+        self.category_repository = category_repository
+
+    def get_categories(self) -> List[Category]:
+        """
+        Get all categories.
+
+        Returns
+        -------
+        list of Category
+            List of all categories.
+        """
+        return self.category_repository.get_all()
+
+    def get_category(self, id: str) -> Category:
+        """Get a category by id."""
+        category = self.category_repository.get_by_id(id)
+
+        if not category:
+            raise CategoryNotFound("Category not found.")
+
+        return category

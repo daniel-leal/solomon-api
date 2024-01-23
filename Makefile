@@ -14,7 +14,7 @@ migrate:
 	alembic upgrade head
 
 migration:
-	alembic revion --autogenerate -m "$(name)"
+	alembic revision --autogenerate -m "$(name)"
 
 run-local:
 	uvicorn api.solomon.main:app --reload

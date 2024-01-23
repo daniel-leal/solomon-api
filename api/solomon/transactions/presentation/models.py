@@ -21,3 +21,8 @@ class CreditCardCreatedResponse(CreditCardCreate):
 
 class CreditCardUpdatedResponse(CreditCardCreatedResponse):
     pass
+
+
+class CategoryResponse(BaseModel):
+    id: str
+    description: str

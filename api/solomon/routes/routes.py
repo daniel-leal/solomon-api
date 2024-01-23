@@ -1,7 +1,12 @@
 from fastapi import APIRouter, FastAPI, Response
 
 from api.solomon.auth.presentation.resources import router as auth_router
-from api.solomon.transactions.presentation.resources import credit_card_router
+from api.solomon.transactions.presentation.categories_resources import (
+    category_router,
+)
+from api.solomon.transactions.presentation.credit_cards_resources import (
+    credit_card_router,
+)
 
 router = APIRouter()
 
@@ -27,3 +32,4 @@ def init_routes(app: FastAPI) -> None:
     app.include_router(
         credit_card_router, prefix="/credit-cards", tags=["credit-cards"]
     )
+    app.include_router(category_router, prefix="/categories", tags=["categories"])
