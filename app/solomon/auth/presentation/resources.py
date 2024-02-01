@@ -11,7 +11,7 @@ from app.solomon.auth.presentation.models import (
     UserLoggedinResponse,
     UserTokenAuthenticated,
 )
-from app.solomon.users.application.factories import get_user_service
+from app.solomon.users.application.dependencies import get_user_service
 from app.solomon.users.application.services import UserService
 from app.solomon.users.domain.exceptions import UserAlreadyExists
 

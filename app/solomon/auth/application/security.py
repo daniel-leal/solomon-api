@@ -12,9 +12,10 @@ from starlette.status import HTTP_401_UNAUTHORIZED
 from app.solomon.auth.domain.exceptions import ExpiredTokenError
 from app.solomon.auth.presentation.models import UserTokenAuthenticated
 from app.solomon.infrastructure.config import EXPIRES_AT, SECRET_KEY
-from app.solomon.users.infrastructure.factories import get_user_repository
+from app.solomon.infrastructure.database import get_repository
 from app.solomon.users.infrastructure.repositories import UserRepository
 
+get_user_repository = get_repository(UserRepository)
 security = HTTPBearer()
 
 

@@ -5,7 +5,7 @@ from fastapi_sqlalchemy import db
 from app.solomon.auth.application.dependencies import get_auth_service
 from app.solomon.auth.application.security import generate_hashed_password
 from app.solomon.auth.presentation.models import UserCreate
-from app.solomon.users.application.factories import get_user_service
+from app.solomon.users.application.dependencies import get_user_service
 
 
 def test_register_user(client):
