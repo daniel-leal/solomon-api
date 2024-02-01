@@ -1,7 +1,13 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, PositiveInt, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    PositiveInt,
+    field_validator,
+    model_validator,
+)
 
 from app.solomon.transactions.domain.options import Kinds
 
@@ -31,20 +37,18 @@ class CreditCardUpdate(BaseModel):
 class CreditCard(CreditCardBase):
     """Credit card model"""
 
-    id: str
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: str
 
 
 class Category(BaseModel):
     """Response model for categories"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     description: str
-
-    class Config:
-        from_attributes = True
 
 
 class InstallmentBase(BaseModel):
@@ -64,10 +68,9 @@ class InstallmentCreate(InstallmentBase):
 class Installment(InstallmentBase):
     """Response model for installments"""
 
-    id: str
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: str
 
 
 class TransactionBase(BaseModel):
@@ -90,36 +93,35 @@ class TransactionCreate(TransactionBase):
 
     installments_number: Optional[PositiveInt] = None
 
-    @validator("recurring_day", always=True)
+    @field_validator("recurring_day")
     def validate_recurring_day(cls, recurring_day, values):
-        is_fixed = values.get("is_fixed")
+        is_fixed = values.data["is_fixed"]
         if is_fixed and recurring_day is None:
             raise ValueError("recurring day is required when transaction is fixed")
         return recurring_day
 
-    @validator("date", always=True)
+    @field_validator("date")
     def validate_date(cls, date, values):
-        is_fixed = values.get("is_fixed")
+        is_fixed = values.data["is_fixed"]
         if not is_fixed and date is None:
             raise ValueError("date is required when transaction is not fixed")
         return date
 
-    @validator("credit_card_id", always=True)
-    def validate_credit_card(cls, credit_card_id, values):
-        kind = values.get("kind")
+    @model_validator(mode="before")
+    def validate_credit_card(cls, data):
+        kind = data["kind"]
+        credit_card_id = data.get("credit_card_id")
         if kind == Kinds.CREDIT and credit_card_id is None:
             raise ValueError("credit card is required when transaction is credit")
         elif kind != Kinds.CREDIT:
             credit_card_id = None
-
-        return credit_card_id
+        return data
 
 
 class Transaction(TransactionBase):
     """Response model for transactions"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     installments: Optional[List[Installment]] = None
-
-    class Config:
-        from_attributes = True

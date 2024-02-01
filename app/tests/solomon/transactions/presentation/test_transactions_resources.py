@@ -24,7 +24,7 @@ class TestTransactionsResources:
                 recurring_day=4,
                 user_id=current_user.id,
                 category_id=category.id,
-            ).dict()
+            ).model_dump()
 
             response = auth_client.post("/transactions/", json=body)
             result = response.json()
@@ -56,7 +56,7 @@ class TestTransactionsResources:
                 amount=300.00,
                 installments_number=3,
                 date=datetime.date(2023, 5, 1),
-            ).dict()
+            ).model_dump()
 
             response = auth_client.post("/transactions/", json=jsonable_encoder(body))
             result = response.json()
@@ -90,7 +90,7 @@ class TestTransactionsResources:
                 amount=300.00,
                 installments_number=3,
                 date=datetime.date(2023, 5, 1),
-            ).dict()
+            ).model_dump()
 
             # Substitua create_with_installments por um mock que lança uma exceção
             with patch(

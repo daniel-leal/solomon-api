@@ -285,7 +285,7 @@ class TestTransactionService:
                 kind=kind, is_fixed=True, date="2024-01-15", recurring_day=None
             )
 
-    def test_create_credit_card_invalid_variable_transaction(self):
+    def test_create_invalid_variable_transaction(self):
         with pytest.raises(ValueError):
             TransactionCreateFactory.build(
                 kind=Kinds.CREDIT.value,
@@ -293,4 +293,15 @@ class TestTransactionService:
                 recurring_day=None,
                 installments_number=None,
                 date=None,
+                credit_card_id=str(uuid4()),
+            )
+
+    def test_create_credit_card_invalid_card_transaction(self):
+        with pytest.raises(ValueError):
+            TransactionCreateFactory.build(
+                kind=Kinds.CREDIT.value,
+                is_fixed=False,
+                recurring_day=None,
+                installments_number=None,
+                date="2024-01-15",
             )
