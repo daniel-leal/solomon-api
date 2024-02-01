@@ -17,7 +17,7 @@ migration:
 	alembic revision --autogenerate -m "$(name)"
 
 run-local:
-	uvicorn api.solomon.main:app --reload
+	uvicorn app.solomon.main:app --reload
 
 test:
 	pytest -vv $(file) --cov-report term-missing --cov=. --cov-config=.coveragerc

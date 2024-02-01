@@ -2,5 +2,5 @@
 omit =
     */tests/*
     */__init__.py
-    api/solomon/infrastructure/*
-    api/solomon/models.py
+    app/solomon/infrastructure/*
+    app/solomon/models.py
