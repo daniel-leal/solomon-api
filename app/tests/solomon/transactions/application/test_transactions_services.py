@@ -4,12 +4,18 @@ from uuid import uuid4
 import pytest
 
 from app.solomon.transactions.application.services import CreditCardService
-from app.solomon.transactions.domain.exceptions import CreditCardNotFound
+from app.solomon.transactions.domain.exceptions import (
+    CreditCardNotFound,
+    TransactionNotFound,
+)
 from app.solomon.transactions.domain.models import Installment, Transaction
 from app.solomon.transactions.domain.options import Kinds
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
 from app.tests.solomon.factories.installment_factory import InstallmentCreateFactory
-from app.tests.solomon.factories.transaction_factory import TransactionCreateFactory
+from app.tests.solomon.factories.transaction_factory import (
+    TransactionCreateFactory,
+    TransactionFactory,
+)
 
 
 class TestCreditCardService:
@@ -304,4 +310,34 @@ class TestTransactionService:
                 recurring_day=None,
                 installments_number=None,
                 date="2024-01-15",
+            )
+
+    def test_get_transaction(self, transaction_service, mock_repository):
+        mock_user_id = "123"
+        transaction = TransactionFactory.build(
+            id=str(uuid4()),
+            kind=Kinds.DEBIT.value,
+            is_fixed=False,
+            recurring_day=None,
+            credit_card_id=str(uuid4()),
+        )
+
+        mock_repository.get_by_id.return_value = transaction
+
+        result = transaction_service.get_transaction("transaction_id", mock_user_id)
+
+        mock_repository.get_by_id.assert_called_once_with(
+            transaction_id="transaction_id", user_id=mock_user_id
+        )
+        assert result == transaction
+
+    def test_get_invalid_transaction(self, transaction_service, mock_repository):
+        mock_user_id = "123"
+        mock_repository.get_by_id.return_value = None
+
+        with pytest.raises(TransactionNotFound):
+            transaction_service.get_transaction("invalid_id", mock_user_id)
+
+            mock_repository.get_by_id.assert_called_once_with(
+                id="invalid_id", user_id=mock_user_id
             )

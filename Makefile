@@ -20,7 +20,10 @@ run-local:
 	uvicorn app.solomon.main:app --reload
 
 test:
-	pytest -vv $(file) --cov-report term-missing --cov=. --cov-config=.coveragerc
+	pytest -vv $(file)
 
 test-cover:
-	pytest --cov-report html --cov=. --cov-config=.coveragerc
+	pytest -vv $(file) --cov-report term-missing --cov=. --cov-config=.coveragerc
+
+test-cover-html:
+	pytest -vv $(file) --cov-report html --cov=. --cov-config=.coveragerc

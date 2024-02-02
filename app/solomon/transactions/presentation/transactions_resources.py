@@ -1,7 +1,9 @@
 from fastapi import Depends
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response
 from fastapi.routing import APIRouter
 from starlette import status
+from starlette.exceptions import HTTPException
 
 from app.solomon.auth.application.security import get_current_user
 from app.solomon.auth.presentation.models import (
@@ -9,6 +11,7 @@ from app.solomon.auth.presentation.models import (
 )
 from app.solomon.transactions.application.dependencies import get_transaction_service
 from app.solomon.transactions.application.services import TransactionService
+from app.solomon.transactions.domain.exceptions import TransactionNotFound
 from app.solomon.transactions.presentation.models import (
     Transaction,
     TransactionCreate,
@@ -24,7 +27,7 @@ async def create_transaction(
     transaction: TransactionCreate,
     transaction_service: TransactionService = Depends(get_transaction_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Response:
+) -> Transaction:
     """
     Create a new transaction.
 
@@ -51,3 +54,36 @@ async def create_transaction(
         return Response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e)
         )
+
+
+@transaction_router.get("/{transaction_id}", response_model=Transaction)
+async def get_transaction(
+    transaction_id: str,
+    transaction_service: TransactionService = Depends(get_transaction_service),
+    current_user: UserTokenAuthenticated = Depends(get_current_user),
+) -> Transaction:
+    """
+    Retrieve a transaction by its ID.
+
+    This function receives a transaction_id and a TransactionService instance,
+    then tries to retrieve the transaction using the provided service.
+
+    Parameters
+    ----------
+    transaction_id : str
+        The ID of the transaction to be retrieved.
+    transaction_service : TransactionService, optional
+        The service to be used to retrieve the transaction, by default
+        Depends(get_transaction_service)
+    current_user : UserTokenAuthenticated, optional
+        The current user, by default Depends(get_current_user)
+
+    Returns
+    -------
+    Transaction
+        The retrieved transaction.
+    """
+    try:
+        return transaction_service.get_transaction(transaction_id, current_user.id)
+    except TransactionNotFound as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

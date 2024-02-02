@@ -80,6 +80,14 @@ class TransactionRepository:
         """Rollback the current transaction."""
         self.session.rollback()
 
+    def get_by_id(self, transaction_id: str, user_id: str) -> Transaction | None:
+        """Get a Transaction by id."""
+        return (
+            self.session.query(Transaction)
+            .filter(Transaction.id == transaction_id, Transaction.user_id == user_id)
+            .first()
+        )
+
     def create(self, **kwargs) -> Transaction:
         """Create a new Transaction."""
         instance = Transaction(**kwargs)

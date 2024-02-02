@@ -5,6 +5,7 @@ from app.solomon.transactions.application.handlers import CreditCardTransactionH
 from app.solomon.transactions.domain.exceptions import (
     CategoryNotFound,
     CreditCardNotFound,
+    TransactionNotFound,
 )
 from app.solomon.transactions.domain.models import (
     Category,
@@ -182,6 +183,31 @@ class TransactionService:
         """
         created_transaction = self._handle_transaction(transaction)
         return created_transaction
+
+    def get_transaction(self, transaction_id: str, user_id: str) -> Transaction:
+        """
+        Retrieve a transaction by its ID and their installments if it has.
+
+        Parameters
+        ----------
+        transaction_id : str
+            The ID of the transaction to retrieve.
+        user_id : str
+            The ID of the user that owns the transactions.
+
+        Returns
+        -------
+        Transaction
+            The retrieved transaction.
+        """
+        transaction = self.transaction_repository.get_by_id(
+            transaction_id=transaction_id, user_id=user_id
+        )
+
+        if not transaction:
+            raise TransactionNotFound("Transaction not found.")
+
+        return transaction
 
     def _handle_transaction(self, transaction: TransactionCreate) -> Transaction:
         if transaction.kind == Kinds.CREDIT and not transaction.is_fixed:

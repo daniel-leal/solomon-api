@@ -13,7 +13,7 @@ from app.solomon.main import app
 from app.solomon.users.domain.models import User
 from app.tests.solomon.factories.category_factory import CategoryFactory
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
-from app.tests.solomon.factories.transaction_factory import TransactionCreateFactory
+from app.tests.solomon.factories.transaction_factory import TransactionCreateFactory, TransactionFactory
 from app.tests.solomon.factories.user_factory import UserFactory
 
 engine = create_engine(DATABASE_URL)
@@ -96,3 +96,4 @@ register(UserFactory)
 register(CreditCardFactory)
 register(CategoryFactory)
 register(TransactionCreateFactory)
+register(TransactionFactory)
