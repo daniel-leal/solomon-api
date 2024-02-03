@@ -1,6 +1,6 @@
+from typing import List
+
 from fastapi import Depends
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import Response
 from fastapi.routing import APIRouter
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -51,9 +51,9 @@ async def create_transaction(
         transaction = transaction.model_copy(update={"user_id": current_user.id})
         return transaction_service.create_transaction(transaction)
     except Exception as e:
-        return Response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e)
-        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        ) from e
 
 
 @transaction_router.get("/{transaction_id}", response_model=Transaction)
@@ -86,4 +86,31 @@ async def get_transaction(
     try:
         return transaction_service.get_transaction(transaction_id, current_user.id)
     except TransactionNotFound as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+
+@transaction_router.get("/", response_model=List[Transaction])
+async def get_transactions(
+    transaction_service: TransactionService = Depends(get_transaction_service),
+    current_user: UserTokenAuthenticated = Depends(get_current_user),
+) -> List[Transaction]:
+    """
+    Retrieve all transactions.
+
+    This function receives a TransactionService instance and a UserTokenAuthenticated instance,
+    then tries to retrieve all transactions using the provided service.
+
+    Parameters
+    ----------
+    transaction_service : TransactionService, optional
+        The service to be used to retrieve the transactions, by default
+        Depends(get_transaction_service)
+    current_user : UserTokenAuthenticated, optional
+        The current user, by default Depends(get_current_user)
+
+    Returns
+    -------
+    List[Transaction]
+        The retrieved transactions.
+    """
+    return transaction_service.get_transactions(current_user.id)

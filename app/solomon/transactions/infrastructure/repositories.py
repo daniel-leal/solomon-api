@@ -80,6 +80,10 @@ class TransactionRepository:
         """Rollback the current transaction."""
         self.session.rollback()
 
+    def get_all(self, user_id: str) -> List[Transaction]:
+        """Get all transactions based on specified filters."""
+        return self.session.query(Transaction).filter(Transaction.user_id == user_id)
+
     def get_by_id(self, transaction_id: str, user_id: str) -> Transaction | None:
         """Get a Transaction by id."""
         return (

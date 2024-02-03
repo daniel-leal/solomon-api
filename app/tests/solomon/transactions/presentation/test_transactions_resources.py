@@ -118,10 +118,19 @@ class TestTransactionsResources:
             assert result["amount"] == transaction.amount
             assert result["installments"] == []
 
-    def test_get_invalid_transaction(self, auth_client, current_user, transaction_factory):
+    def test_get_invalid_transaction(self, auth_client):
         with db():
             response = auth_client.get(f"/transactions/{uuid4()}/")
             result = response.json()
 
             assert response.status_code == 404
             assert result["detail"] == "Transaction not found."
+
+    def test_get_transactions(self, auth_client, transaction_factory, current_user):
+        with db():
+            transactions = transaction_factory.create_batch(2, user=current_user)
+
+            response = auth_client.get("/transactions/")
+
+            assert response.status_code == 200
+            assert len(transactions) == 2

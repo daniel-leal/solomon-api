@@ -1,4 +1,3 @@
-import logging
 from typing import List
 
 from app.solomon.transactions.application.handlers import CreditCardTransactionHandler
@@ -21,8 +20,6 @@ from app.solomon.transactions.presentation.models import (
     Transaction,
     TransactionCreate,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class CreditCardService:
@@ -208,6 +205,22 @@ class TransactionService:
             raise TransactionNotFound("Transaction not found.")
 
         return transaction
+
+    def get_transactions(self, user_id: str) -> List[Transaction]:
+        """
+        Retrieve all transactions.
+
+        Parameters
+        ----------
+        user_id : str
+            The ID of the user that owns the transactions.
+
+        Returns
+        -------
+        List[Transaction]
+            A list of all transactions.
+        """
+        return self.transaction_repository.get_all(user_id=user_id)
 
     def _handle_transaction(self, transaction: TransactionCreate) -> Transaction:
         if transaction.kind == Kinds.CREDIT and not transaction.is_fixed:

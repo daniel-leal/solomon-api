@@ -39,10 +39,10 @@ class Transaction(BaseModel):
 
     description = Column(String(50), nullable=False)
     amount = Column(Float, nullable=False)
-    date = Column(Date, nullable=True)
-    recurring_day = Column(Integer, nullable=True)
     is_fixed = Column(Boolean, nullable=False, default=False)
     is_revenue = Column(Boolean, nullable=False, default=False)
+    date = Column(Date, nullable=True)
+    recurring_day = Column(Integer, nullable=True)
     kind = Column(String(20), nullable=False)
 
     installments = relationship("Installment", back_populates="transaction")

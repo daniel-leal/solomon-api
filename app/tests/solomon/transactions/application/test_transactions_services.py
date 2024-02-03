@@ -341,3 +341,15 @@ class TestTransactionService:
             mock_repository.get_by_id.assert_called_once_with(
                 id="invalid_id", user_id=mock_user_id
             )
+
+    def test_get_transactions(self, transaction_service, mock_repository):
+        mock_user_id = "123"
+        mock_transactions = [TransactionFactory.build(), TransactionFactory.build()]
+        mock_repository.get_all.return_value = mock_transactions
+
+        result = transaction_service.get_transactions(mock_user_id)
+
+        assert result == mock_transactions
+        assert isinstance(result, list)
+        assert len(result) == 2
+        mock_repository.get_all.assert_called_once_with(user_id=mock_user_id)
