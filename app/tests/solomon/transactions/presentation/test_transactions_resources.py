@@ -1,5 +1,6 @@
 import datetime
 from unittest.mock import patch
+from uuid import uuid4
 
 from fastapi.encoders import jsonable_encoder
 from fastapi_sqlalchemy import db
@@ -101,3 +102,35 @@ class TestTransactionsResources:
                     "/transactions/", json=jsonable_encoder(body)
                 )
                 assert response.status_code == 500
+
+    def test_get_transaction(self, auth_client, current_user, transaction_factory):
+        with db():
+            transaction = transaction_factory.create(user=current_user)
+
+            response = auth_client.get(f"/transactions/{transaction.id}/")
+            result = response.json()
+
+            assert response.status_code == 200
+            assert result["id"] == transaction.id
+            assert result["description"] == transaction.description
+            assert result["kind"] == transaction.kind
+            assert result["is_fixed"] == transaction.is_fixed
+            assert result["amount"] == transaction.amount
+            assert result["installments"] == []
+
+    def test_get_invalid_transaction(self, auth_client):
+        with db():
+            response = auth_client.get(f"/transactions/{uuid4()}/")
+            result = response.json()
+
+            assert response.status_code == 404
+            assert result["detail"] == "Transaction not found."
+
+    def test_get_transactions(self, auth_client, transaction_factory, current_user):
+        with db():
+            transactions = transaction_factory.create_batch(2, user=current_user)
+
+            response = auth_client.get("/transactions/")
+
+            assert response.status_code == 200
+            assert len(transactions) == 2

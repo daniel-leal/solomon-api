@@ -28,7 +28,7 @@ async def create_credit_card(
     credit_card: CreditCardCreate,
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Response:
+) -> CreditCard:
     """
     Create a new credit card.
 
@@ -48,8 +48,6 @@ async def create_credit_card(
     JSONResponse
         The created credit card with a 201 status code.
     """
-    print(credit_card)
-
     credit_card_created = credit_card_service.create_credit_card(
         **credit_card.model_dump(), user_id=current_user.id
     )
@@ -66,7 +64,7 @@ async def create_credit_card(
 async def get_all_credit_cards(
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Response:
+) -> List[CreditCard]:
     """
     Get all credit cards.
 
@@ -93,7 +91,7 @@ async def get_credit_card(
     credit_card_id: str,
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Response:
+) -> CreditCard:
     """
     Get a specific credit card by its ID.
 
@@ -128,7 +126,7 @@ async def delete_credit_card(
     credit_card_id: str,
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Response:
+) -> CreditCard:
     """
     Delete a credit card.
 
@@ -165,7 +163,7 @@ async def update_credit_card(
     credit_card_update: CreditCardUpdate,
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Response:
+) -> CreditCard:
     """
     Update a credit card.
 

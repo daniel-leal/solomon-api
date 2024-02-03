@@ -21,6 +21,7 @@ venv
 .venv
 docs.zip
 archive.zip
+pyrightconfig.json
 
 # macOS
 .DS_Store

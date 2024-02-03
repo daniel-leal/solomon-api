@@ -5,6 +5,16 @@
 
 Solomon is a personal finance application designed to help you manage your finances effectively.
 
+## 📚 Documentation
+
+The `/docs` folder contains detailed documentation about the different aspects of the project.
+
+### Transaction Definition and Rules
+
+A transaction in Solomon represents a single instance of money exchange. It could be income, expense, or transfer. For a detailed explanation of the definition and rules of a transaction, please refer to the [Transaction Documentation](./docs/use_cases/transaction.md).
+
+For more details about other aspects of the project, please refer to the `/docs` folder.
+
 ## 🚀 Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.

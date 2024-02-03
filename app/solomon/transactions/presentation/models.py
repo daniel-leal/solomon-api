@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import (
     BaseModel,
@@ -121,7 +121,7 @@ class TransactionCreate(TransactionBase):
 class Transaction(TransactionBase):
     """Response model for transactions"""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="allow")
 
     id: str
-    installments: Optional[List[Installment]] = None
+    installments: Optional[list[Installment]] = None

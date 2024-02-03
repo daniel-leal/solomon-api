@@ -8,3 +8,9 @@ class CategoryNotFound(Exception):
     """Category not found exception."""
 
     pass
+
+
+class TransactionNotFound(Exception):
+    """Transaction not found exception."""
+
+    pass
