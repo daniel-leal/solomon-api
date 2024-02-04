@@ -8,16 +8,21 @@ from sqlalchemy.orm import sessionmaker
 
 from app.solomon.auth.application.security import generate_hashed_password, verify_token
 from app.solomon.infrastructure.config import DATABASE_URL
-from app.solomon.infrastructure.database import Base, get_db_session
+from app.solomon.infrastructure.database import Base, CustomQuery, get_db_session
 from app.solomon.main import app
 from app.solomon.users.domain.models import User
 from app.tests.solomon.factories.category_factory import CategoryFactory
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
-from app.tests.solomon.factories.transaction_factory import TransactionCreateFactory, TransactionFactory
+from app.tests.solomon.factories.transaction_factory import (
+    TransactionCreateFactory,
+    TransactionFactory,
+)
 from app.tests.solomon.factories.user_factory import UserFactory
 
 engine = create_engine(DATABASE_URL)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine, query_cls=CustomQuery
+)
 
 
 def override_get_db():

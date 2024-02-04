@@ -1,5 +1,7 @@
 from typing import List
 
+from fastapi_pagination import Params
+
 from app.solomon.transactions.application.handlers import CreditCardTransactionHandler
 from app.solomon.transactions.domain.exceptions import (
     CategoryNotFound,
@@ -7,7 +9,6 @@ from app.solomon.transactions.domain.exceptions import (
     TransactionNotFound,
 )
 from app.solomon.transactions.domain.models import (
-    Category,
     CreditCard,
 )
 from app.solomon.transactions.domain.options import Kinds
@@ -17,8 +18,12 @@ from app.solomon.transactions.infrastructure.repositories import (
     TransactionRepository,
 )
 from app.solomon.transactions.presentation.models import (
+    CategoriesResponseMapper,
+    CategoryResponseMapper,
+    PaginatedTransactionResponseMapper,
     Transaction,
     TransactionCreate,
+    TransactionResponseMapper,
 )
 
 
@@ -129,10 +134,10 @@ class CreditCardService:
 class CategoryService:
     """Service for handling Category business logic."""
 
-    def __init__(self, category_repository: CategoryRepository):
+    def __init__(self, category_repository: CategoryRepository) -> None:
         self.category_repository = category_repository
 
-    def get_categories(self) -> List[Category]:
+    def get_categories(self) -> CategoriesResponseMapper:
         """
         Get all categories.
 
@@ -141,23 +146,26 @@ class CategoryService:
         list of Category
             List of all categories.
         """
-        return self.category_repository.get_all()
+        categories = self.category_repository.get_all()
+        return CategoriesResponseMapper.create(categories=categories)
 
-    def get_category(self, id: str) -> Category:
+    def get_category(self, id: str) -> CategoryResponseMapper:
         """Get a category by id."""
         category = self.category_repository.get_by_id(id)
 
         if not category:
             raise CategoryNotFound("Category not found.")
 
-        return category
+        return CategoryResponseMapper.create(category=category)
 
 
 class TransactionService:
     def __init__(self, transaction_repository: TransactionRepository) -> None:
         self.transaction_repository = transaction_repository
 
-    def create_transaction(self, transaction: TransactionCreate) -> Transaction:
+    def create_transaction(
+        self, transaction: TransactionCreate
+    ) -> TransactionResponseMapper:
         """
         Create a new transaction.
 
@@ -179,9 +187,11 @@ class TransactionService:
             If any other error occurs.
         """
         created_transaction = self._handle_transaction(transaction)
-        return created_transaction
+        return TransactionResponseMapper.create(transaction=created_transaction)
 
-    def get_transaction(self, transaction_id: str, user_id: str) -> Transaction:
+    def get_transaction(
+        self, transaction_id: str, user_id: str
+    ) -> TransactionResponseMapper:
         """
         Retrieve a transaction by its ID and their installments if it has.
 
@@ -204,9 +214,11 @@ class TransactionService:
         if not transaction:
             raise TransactionNotFound("Transaction not found.")
 
-        return transaction
+        return TransactionResponseMapper.create(transaction=transaction)
 
-    def get_transactions(self, user_id: str) -> List[Transaction]:
+    def get_transactions(
+        self, user_id: str, params: Params = None
+    ) -> PaginatedTransactionResponseMapper:
         """
         Retrieve all transactions.
 
@@ -220,7 +232,17 @@ class TransactionService:
         List[Transaction]
             A list of all transactions.
         """
-        return self.transaction_repository.get_all(user_id=user_id)
+        paginated_transaction = self.transaction_repository.get_all(
+            user_id=user_id, params=params
+        )
+
+        return PaginatedTransactionResponseMapper.create(
+            items=paginated_transaction.items,
+            page=paginated_transaction.page,
+            pages=paginated_transaction.pages,
+            size=paginated_transaction.size,
+            total=paginated_transaction.total,
+        )
 
     def _handle_transaction(self, transaction: TransactionCreate) -> Transaction:
         if transaction.kind == Kinds.CREDIT and not transaction.is_fixed:
@@ -231,6 +253,4 @@ class TransactionService:
             **transaction.model_dump(exclude_none=True)
         )
 
-        response = Transaction.model_validate(created_transaction)
-
-        return response
+        return created_transaction

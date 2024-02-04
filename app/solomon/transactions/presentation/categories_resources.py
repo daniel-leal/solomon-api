@@ -1,6 +1,4 @@
-from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
 from app.solomon.transactions.application.dependencies import (
@@ -10,15 +8,18 @@ from app.solomon.transactions.application.services import (
     CategoryService,
 )
 from app.solomon.transactions.domain.exceptions import CategoryNotFound
-from app.solomon.transactions.presentation.models import Category
+from app.solomon.transactions.presentation.models import (
+    CategoriesResponseMapper,
+    CategoryResponseMapper,
+)
 
 category_router = APIRouter()
 
 
-@category_router.get("/", response_model=List[Category])
+@category_router.get("/", response_model=CategoriesResponseMapper)
 async def get_all_categories(
     category_service: CategoryService = Depends(get_category_service),
-) -> Response:
+) -> CategoriesResponseMapper:
     """
     Get all categories.
 
@@ -35,11 +36,11 @@ async def get_all_categories(
     return category_service.get_categories()
 
 
-@category_router.get("/{category_id}", response_model=Category)
+@category_router.get("/{category_id}", response_model=CategoryResponseMapper)
 async def get_category(
     category_id: str,
     category_service: CategoryService = Depends(get_category_service),
-) -> Response:
+) -> CategoryResponseMapper:
     """
     Get a category by id.
 

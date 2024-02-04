@@ -2,7 +2,9 @@ import datetime
 from uuid import uuid4
 
 import pytest
+from fastapi_pagination import Params
 
+from app.solomon.common.models import PaginatedResponse
 from app.solomon.transactions.application.services import CreditCardService
 from app.solomon.transactions.domain.exceptions import (
     CreditCardNotFound,
@@ -10,6 +12,9 @@ from app.solomon.transactions.domain.exceptions import (
 )
 from app.solomon.transactions.domain.models import Installment, Transaction
 from app.solomon.transactions.domain.options import Kinds
+from app.solomon.transactions.presentation.models import (
+    PaginatedTransactionResponseMapper,
+)
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
 from app.tests.solomon.factories.installment_factory import InstallmentCreateFactory
 from app.tests.solomon.factories.transaction_factory import (
@@ -180,7 +185,7 @@ class TestTransactionService:
         # Act
         created_transaction = transaction_service.create_transaction(
             mock_transaction_create
-        )
+        ).data
 
         # Assert
         assert created_transaction.is_fixed is True
@@ -201,6 +206,7 @@ class TestTransactionService:
             recurring_day=4,
             credit_card_id=str(uuid4()),
         )
+
         mock_repository.create.return_value = Transaction(
             id=str(uuid4()),
             description=mock_transaction_create.description,
@@ -217,7 +223,7 @@ class TestTransactionService:
         # Act
         created_transaction = transaction_service.create_transaction(
             mock_transaction_create
-        )
+        ).data
 
         # Assert
         assert created_transaction.is_fixed is True
@@ -265,7 +271,7 @@ class TestTransactionService:
         # Act
         created_transaction = transaction_service.create_transaction(
             mock_transaction_create
-        )
+        ).data
         installments = created_transaction.installments
 
         # Assert
@@ -329,7 +335,12 @@ class TestTransactionService:
         mock_repository.get_by_id.assert_called_once_with(
             transaction_id="transaction_id", user_id=mock_user_id
         )
-        assert result == transaction
+
+        assert result.data.id == transaction.id
+        assert result.data.kind == transaction.kind
+        assert result.data.is_fixed == transaction.is_fixed
+        assert result.data.credit_card_id == transaction.credit_card_id
+        assert result.data.recurring_day == transaction.recurring_day
 
     def test_get_invalid_transaction(self, transaction_service, mock_repository):
         mock_user_id = "123"
@@ -343,13 +354,29 @@ class TestTransactionService:
             )
 
     def test_get_transactions(self, transaction_service, mock_repository):
-        mock_user_id = "123"
-        mock_transactions = [TransactionFactory.build(), TransactionFactory.build()]
-        mock_repository.get_all.return_value = mock_transactions
+        user_id = "123"
+        pagination_params = Params(page=1, size=5)
+        mock_transactions = [
+            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
+            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
+            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
+        ]
 
-        result = transaction_service.get_transactions(mock_user_id)
+        mock_repository.get_all.return_value = PaginatedResponse(
+            items=mock_transactions, page=1, pages=1, size=5, total=3
+        )
 
-        assert result == mock_transactions
-        assert isinstance(result, list)
-        assert len(result) == 2
-        mock_repository.get_all.assert_called_once_with(user_id=mock_user_id)
+        expected_result = PaginatedTransactionResponseMapper.create(
+            items=mock_transactions,
+            page=1,
+            pages=1,
+            size=5,
+            total=3,
+        )
+
+        result = transaction_service.get_transactions(user_id, pagination_params)
+
+        assert result == expected_result
+        mock_repository.get_all.assert_called_once_with(
+            user_id=user_id, params=pagination_params
+        )

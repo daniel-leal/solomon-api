@@ -23,10 +23,11 @@ class TestCategoriesResources:
 
             # Act
             response = client.get(f"/categories/{category.id}")
+            data = response.json()["data"]
 
             # Assert
             assert response.status_code == 200
-            assert response.json() == {
+            assert data == {
                 "id": category.id,
                 "description": category.description,
             }

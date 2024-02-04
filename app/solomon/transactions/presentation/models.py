@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import (
     BaseModel,
@@ -9,6 +9,8 @@ from pydantic import (
     model_validator,
 )
 
+from app.solomon.common.models import PaginationMeta, ResponseMapper
+from app.solomon.transactions.domain.models import Category, CreditCard, Transaction
 from app.solomon.transactions.domain.options import Kinds
 
 
@@ -34,21 +36,63 @@ class CreditCardUpdate(BaseModel):
     invoice_start_day: Optional[PositiveInt] = None
 
 
-class CreditCard(CreditCardBase):
-    """Credit card model"""
+class CreditCardMapper(CreditCardBase):
+    """Mapper model for credit card"""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str
 
+    @classmethod
+    def create(cls, credit_card: CreditCard):
+        return cls.model_validate(credit_card)
 
-class Category(BaseModel):
-    """Response model for categories"""
+
+class CreditCardResponseMapper(ResponseMapper):
+    """Response model for credit card"""
+
+    @classmethod
+    def create(cls, credit_card: CreditCard):
+        return cls(data=CreditCardMapper.create(credit_card))
+
+
+class CreditCardsResponseMapper(ResponseMapper):
+    """Response model for credit cards"""
+
+    @classmethod
+    def create(cls, credit_cards: List[CreditCard]):
+        return cls(
+            data=[CreditCardMapper.create(credit_card) for credit_card in credit_cards]
+        )
+
+
+class CategoryMapper(BaseModel):
+    """Mapper model for categories"""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str
     description: str
+
+    @classmethod
+    def create(cls, category: Category):
+        return cls.model_validate(category)
+
+
+class CategoryResponseMapper(ResponseMapper):
+    """Response model for categories"""
+
+    @classmethod
+    def create(cls, category: Category):
+        return cls(data=CategoryMapper.create(category))
+
+
+class CategoriesResponseMapper(ResponseMapper):
+    """Response model for categories"""
+
+    @classmethod
+    def create(cls, categories: List[Category]):
+        return cls(data=[CategoryMapper.create(category) for category in categories])
 
 
 class InstallmentBase(BaseModel):
@@ -118,10 +162,37 @@ class TransactionCreate(TransactionBase):
         return data
 
 
-class Transaction(TransactionBase):
-    """Response model for transactions"""
+class TransactionMapper(TransactionBase):
+    """Mapper model for transactions"""
 
-    model_config = ConfigDict(from_attributes=True, extra="allow")
+    model_config = ConfigDict(
+        from_attributes=True, extra="allow", arbritrary_types_allowed=True
+    )
 
     id: str
     installments: Optional[list[Installment]] = None
+
+    @classmethod
+    def create(cls, transaction: Transaction):
+        return cls.model_validate(transaction)
+
+
+class TransactionResponseMapper(ResponseMapper):
+    """Response model for transaction"""
+
+    @classmethod
+    def create(cls, transaction: Transaction):
+        return cls(data=TransactionMapper.create(transaction))
+
+
+class PaginatedTransactionResponseMapper(ResponseMapper):
+    """Response model for paginated transactions"""
+
+    @classmethod
+    def create(
+        cls, items: List[Transaction], page: int, pages: int, size: int, total: int
+    ):
+        return cls(
+            data=[TransactionMapper.create(transaction) for transaction in items],
+            meta=PaginationMeta(page=page, pages=pages, size=size, total=total),
+        )

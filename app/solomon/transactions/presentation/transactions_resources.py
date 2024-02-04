@@ -1,7 +1,6 @@
-from typing import List
-
 from fastapi import Depends
 from fastapi.routing import APIRouter
+from fastapi_pagination import Params
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -13,21 +12,22 @@ from app.solomon.transactions.application.dependencies import get_transaction_se
 from app.solomon.transactions.application.services import TransactionService
 from app.solomon.transactions.domain.exceptions import TransactionNotFound
 from app.solomon.transactions.presentation.models import (
-    Transaction,
+    PaginatedTransactionResponseMapper,
     TransactionCreate,
+    TransactionResponseMapper,
 )
 
 transaction_router = APIRouter()
 
 
 @transaction_router.post(
-    "/", response_model=Transaction, status_code=status.HTTP_201_CREATED
+    "/", response_model=TransactionResponseMapper, status_code=status.HTTP_201_CREATED
 )
 async def create_transaction(
     transaction: TransactionCreate,
     transaction_service: TransactionService = Depends(get_transaction_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Transaction:
+) -> TransactionResponseMapper:
     """
     Create a new transaction.
 
@@ -49,19 +49,20 @@ async def create_transaction(
     """
     try:
         transaction = transaction.model_copy(update={"user_id": current_user.id})
-        return transaction_service.create_transaction(transaction)
+        created_transaction = transaction_service.create_transaction(transaction)
+        return created_transaction
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         ) from e
 
 
-@transaction_router.get("/{transaction_id}", response_model=Transaction)
+@transaction_router.get("/{transaction_id}", response_model=TransactionResponseMapper)
 async def get_transaction(
     transaction_id: str,
     transaction_service: TransactionService = Depends(get_transaction_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> Transaction:
+) -> TransactionResponseMapper:
     """
     Retrieve a transaction by its ID.
 
@@ -89,11 +90,12 @@ async def get_transaction(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
-@transaction_router.get("/", response_model=List[Transaction])
+@transaction_router.get("/")
 async def get_transactions(
     transaction_service: TransactionService = Depends(get_transaction_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> List[Transaction]:
+    pagination: Params = Depends(),
+) -> PaginatedTransactionResponseMapper:
     """
     Retrieve all transactions.
 
@@ -113,4 +115,4 @@ async def get_transactions(
     List[Transaction]
         The retrieved transactions.
     """
-    return transaction_service.get_transactions(current_user.id)
+    return transaction_service.get_transactions(current_user.id, pagination)

@@ -1,5 +1,8 @@
 from typing import List
 
+from fastapi_pagination import Params
+
+from app.solomon.common.models import PaginatedResponse
 from app.solomon.transactions.domain.models import (
     Category,
     CreditCard,
@@ -80,9 +83,13 @@ class TransactionRepository:
         """Rollback the current transaction."""
         self.session.rollback()
 
-    def get_all(self, user_id: str) -> List[Transaction]:
+    def get_all(self, user_id: str, params: Params = None) -> PaginatedResponse:
         """Get all transactions based on specified filters."""
-        return self.session.query(Transaction).filter(Transaction.user_id == user_id)
+        return (
+            self.session.query(Transaction)
+            .filter(Transaction.user_id == user_id)
+            .paginate(params)
+        )
 
     def get_by_id(self, transaction_id: str, user_id: str) -> Transaction | None:
         """Get a Transaction by id."""
