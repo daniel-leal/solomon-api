@@ -1,6 +1,4 @@
-from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
 from app.solomon.auth.application.security import get_current_user
@@ -15,6 +13,8 @@ from app.solomon.transactions.domain.exceptions import CreditCardNotFound
 from app.solomon.transactions.presentation.models import (
     CreditCard,
     CreditCardCreate,
+    CreditCardResponseMapper,
+    CreditCardsResponseMapper,
     CreditCardUpdate,
 )
 
@@ -22,7 +22,7 @@ credit_card_router = APIRouter()
 
 
 @credit_card_router.post(
-    "/", response_model=CreditCard, status_code=status.HTTP_201_CREATED
+    "/", response_model=CreditCardResponseMapper, status_code=status.HTTP_201_CREATED
 )
 async def create_credit_card(
     credit_card: CreditCardCreate,
@@ -52,19 +52,14 @@ async def create_credit_card(
         **credit_card.model_dump(), user_id=current_user.id
     )
 
-    return CreditCard(
-        name=credit_card_created.name,
-        limit=credit_card_created.limit,
-        invoice_start_day=credit_card_created.invoice_start_day,
-        id=credit_card_created.id,
-    )
+    return CreditCardResponseMapper.create(credit_card_created)
 
 
-@credit_card_router.get("/", response_model=List[CreditCard])
+@credit_card_router.get("/", response_model=CreditCardsResponseMapper)
 async def get_all_credit_cards(
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> List[CreditCard]:
+) -> CreditCardsResponseMapper:
     """
     Get all credit cards.
 
@@ -83,15 +78,15 @@ async def get_all_credit_cards(
         The list of credit cards with a 200 status code.
     """
     credit_cards = credit_card_service.get_credit_cards(user_id=current_user.id)
-    return credit_cards
+    return CreditCardsResponseMapper.create(credit_cards)
 
 
-@credit_card_router.get("/{credit_card_id}", response_model=CreditCard)
+@credit_card_router.get("/{credit_card_id}", response_model=CreditCardResponseMapper)
 async def get_credit_card(
     credit_card_id: str,
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> CreditCard:
+) -> CreditCardResponseMapper:
     """
     Get a specific credit card by its ID.
 
@@ -110,23 +105,24 @@ async def get_credit_card(
         The requested credit card with a 200 status code.
     """
     try:
-        return credit_card_service.get_credit_card(
+        credit_card = credit_card_service.get_credit_card(
             credit_card_id=credit_card_id, user_id=current_user.id
         )
+        return CreditCardResponseMapper.create(credit_card)
     except CreditCardNotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @credit_card_router.delete(
     "/{credit_card_id}",
-    response_model=CreditCard,
+    response_model=CreditCardResponseMapper,
     status_code=status.HTTP_200_OK,
 )
 async def delete_credit_card(
     credit_card_id: str,
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> CreditCard:
+) -> CreditCardResponseMapper:
     """
     Delete a credit card.
 
@@ -150,20 +146,21 @@ async def delete_credit_card(
         A response object indicating the result of the deletion operation.
     """
     try:
-        return credit_card_service.delete_credit_card(
+        credit_card = credit_card_service.delete_credit_card(
             credit_card_id=credit_card_id, user_id=current_user.id
         )
+        return CreditCardResponseMapper.create(credit_card)
     except CreditCardNotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@credit_card_router.put("/{credit_card_id}", response_model=CreditCard)
+@credit_card_router.put("/{credit_card_id}", response_model=CreditCardResponseMapper)
 async def update_credit_card(
     credit_card_id: str,
     credit_card_update: CreditCardUpdate,
     credit_card_service: CreditCardService = Depends(get_credit_card_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
-) -> CreditCard:
+) -> CreditCardResponseMapper:
     """
     Update a credit card.
 
@@ -189,10 +186,11 @@ async def update_credit_card(
         The updated credit card.
     """
     try:
-        return credit_card_service.update_credit_card(
+        updated_credit_card = credit_card_service.update_credit_card(
             credit_card_id=credit_card_id,
             user_id=current_user.id,
             **credit_card_update.model_dump(exclude_none=True),
         )
+        return CreditCardResponseMapper.create(updated_credit_card)
     except CreditCardNotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

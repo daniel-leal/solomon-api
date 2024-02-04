@@ -28,7 +28,7 @@ class TestTransactionsResources:
             ).model_dump()
 
             response = auth_client.post("/transactions/", json=body)
-            result = response.json()
+            result = response.json()["data"]
 
             assert response.status_code == 201
             assert result["description"] == body["description"]
@@ -51,7 +51,6 @@ class TestTransactionsResources:
                 kind=Kinds.CREDIT.value,
                 is_fixed=False,
                 recurring_day=None,
-                user_id=current_user.id,
                 credit_card_id=credit_card.id,
                 category_id=category.id,
                 amount=300.00,
@@ -60,7 +59,7 @@ class TestTransactionsResources:
             ).model_dump()
 
             response = auth_client.post("/transactions/", json=jsonable_encoder(body))
-            result = response.json()
+            result = response.json()["data"]
 
             assert response.status_code == 201
             assert result["description"] == body["description"]
@@ -93,7 +92,6 @@ class TestTransactionsResources:
                 date=datetime.date(2023, 5, 1),
             ).model_dump()
 
-            # Substitua create_with_installments por um mock que lança uma exceção
             with patch(
                 "app.solomon.transactions.infrastructure.repositories.TransactionRepository.create_with_installments",
                 side_effect=Exception("Database Not Available"),
@@ -108,7 +106,7 @@ class TestTransactionsResources:
             transaction = transaction_factory.create(user=current_user)
 
             response = auth_client.get(f"/transactions/{transaction.id}/")
-            result = response.json()
+            result = response.json()["data"]
 
             assert response.status_code == 200
             assert result["id"] == transaction.id
@@ -126,7 +124,9 @@ class TestTransactionsResources:
             assert response.status_code == 404
             assert result["detail"] == "Transaction not found."
 
-    def test_get_transactions(self, auth_client, transaction_factory, current_user):
+    def test_get_transactions_without_pagination_params(
+        self, auth_client, transaction_factory, current_user
+    ):
         with db():
             transactions = transaction_factory.create_batch(2, user=current_user)
 
@@ -134,3 +134,21 @@ class TestTransactionsResources:
 
             assert response.status_code == 200
             assert len(transactions) == 2
+
+    def test_get_transactions_with_pagination(
+        self, auth_client, transaction_factory, current_user
+    ):
+        with db():
+            transactions = transaction_factory.create_batch(15, user=current_user)
+
+            response = auth_client.get("/transactions/?page=2&size=5")
+            meta = response.json()["meta"]
+            data = response.json()["data"]
+
+            assert response.status_code == 200
+            assert len(transactions) == 15
+            assert meta["page"] == 2
+            assert meta["size"] == 5
+            assert meta["total"] == 15
+            assert len(data) == 5
+            assert isinstance(data, list)

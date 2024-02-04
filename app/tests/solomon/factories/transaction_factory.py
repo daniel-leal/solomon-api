@@ -1,12 +1,11 @@
 from factory import Faker, SubFactory
 from factory.fuzzy import FuzzyChoice, FuzzyDecimal
 
-from app.solomon.transactions.domain.options import Kinds
 from app.solomon.transactions.domain.models import Transaction
+from app.solomon.transactions.domain.options import Kinds
 from app.solomon.transactions.presentation.models import TransactionCreate
 from app.tests.solomon.factories.base_factory import BaseFactory
 from app.tests.solomon.factories.category_factory import CategoryFactory
-from app.tests.solomon.factories.user_factory import UserFactory
 
 
 class TransactionCreateFactory(BaseFactory):
@@ -36,3 +35,4 @@ class TransactionFactory(BaseFactory):
     recurring_day = None
     kind = FuzzyChoice(Kinds)
     category = SubFactory(CategoryFactory)
+    category_id = Faker("uuid4")
