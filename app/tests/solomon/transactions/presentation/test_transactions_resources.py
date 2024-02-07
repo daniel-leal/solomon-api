@@ -1,10 +1,12 @@
 import datetime
 from unittest.mock import patch
+from urllib.parse import urlencode
 from uuid import uuid4
 
 from fastapi.encoders import jsonable_encoder
 from fastapi_sqlalchemy import db
 
+from app.solomon.transactions.domain.models import Transaction
 from app.solomon.transactions.domain.options import Kinds
 
 
@@ -101,12 +103,18 @@ class TestTransactionsResources:
                 )
                 assert response.status_code == 500
 
-    def test_get_transaction(self, auth_client, current_user, transaction_factory):
+    def test_get_transaction(
+        self, auth_client, current_user, transaction_factory, installment_factory
+    ):
         with db():
-            transaction = transaction_factory.create(user=current_user)
+            transaction = transaction_factory.create(
+                user=current_user, kind=Kinds.CREDIT.value, amount=300.00
+            )
+            installment_factory.create_batch(3, transaction=transaction)
 
             response = auth_client.get(f"/transactions/{transaction.id}/")
             result = response.json()["data"]
+            installments = result["installments"]
 
             assert response.status_code == 200
             assert result["id"] == transaction.id
@@ -114,7 +122,7 @@ class TestTransactionsResources:
             assert result["kind"] == transaction.kind
             assert result["is_fixed"] == transaction.is_fixed
             assert result["amount"] == transaction.amount
-            assert result["installments"] == []
+            assert len(installments) == 3
 
     def test_get_invalid_transaction(self, auth_client):
         with db():
@@ -152,3 +160,59 @@ class TestTransactionsResources:
             assert meta["total"] == 15
             assert len(data) == 5
             assert isinstance(data, list)
+
+    def test_get_transactions_with_filters(
+        self, auth_client, category_factory, transaction_factory, current_user
+    ):
+        with db():
+            food_category = category_factory.create(description="Food")
+            home_category = category_factory.create(description="Home")
+
+            transaction_factory.create_batch(
+                45,
+                user=current_user,
+                is_fixed=False,
+                kind=Kinds.CREDIT.value,
+                category=food_category,
+                date=datetime.date(2023, 5, 1),
+                is_revenue=False,
+            )
+            transaction_factory.create_batch(
+                23,
+                user=current_user,
+                is_fixed=True,
+                kind=Kinds.DEBIT.value,
+                category=home_category,
+                date=datetime.date(2023, 8, 15),
+                is_revenue=False,
+            )
+            base_url = "/transactions/"
+            params = {
+                "kind__eq": "debit",
+                "is_fixed__eq": "true",
+                "category_id__eq": home_category.id,
+                "date__gt": "2023-08-01",
+                "date__lt": "2023-08-30",
+                "is_revenue__eq": "false",
+            }
+            url = f"{base_url}?{urlencode(params)}"
+            total_transactions = db.session.query(Transaction).count()
+
+            response = auth_client.get(url)
+
+            data = response.json()["data"]
+
+            assert response.status_code == 200
+            assert total_transactions == 68
+            assert len(data) == 23
+            for item in data:
+                assert item["kind"] == "debit"
+                assert item["is_fixed"] is True
+                assert item["category_id"] == home_category.id
+                assert datetime.date.fromisoformat(item["date"]) > datetime.date(
+                    2023, 8, 1
+                )
+                assert datetime.date.fromisoformat(item["date"]) < datetime.date(
+                    2023, 8, 30
+                )
+                assert item["is_revenue"] is False

@@ -14,6 +14,7 @@ from app.solomon.transactions.domain.exceptions import TransactionNotFound
 from app.solomon.transactions.presentation.models import (
     PaginatedTransactionResponseMapper,
     TransactionCreate,
+    TransactionFilters,
     TransactionResponseMapper,
 )
 
@@ -95,6 +96,7 @@ async def get_transactions(
     transaction_service: TransactionService = Depends(get_transaction_service),
     current_user: UserTokenAuthenticated = Depends(get_current_user),
     pagination: Params = Depends(),
+    filters: TransactionFilters = Depends(),
 ) -> PaginatedTransactionResponseMapper:
     """
     Retrieve all transactions.
@@ -115,4 +117,4 @@ async def get_transactions(
     List[Transaction]
         The retrieved transactions.
     """
-    return transaction_service.get_transactions(current_user.id, pagination)
+    return transaction_service.get_transactions(current_user.id, pagination, filters)

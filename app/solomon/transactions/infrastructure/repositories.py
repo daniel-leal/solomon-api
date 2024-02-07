@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi_pagination import Params
+from sqlalchemy.orm import joinedload
 
 from app.solomon.common.models import PaginatedResponse
 from app.solomon.transactions.domain.models import (
@@ -32,9 +33,9 @@ class CreditCardRepository:
     def __init__(self, session):
         self.session = session
 
-    def get_all(self, user_id: str) -> List[CreditCard]:
+    def get_all(self, user_id: str, **kwargs: dict) -> List[CreditCard]:
         """Get all Credit Cards."""
-        return self.session.query(CreditCard).filter_by(user_id=user_id).all()
+        return self.session.query(CreditCard).filter_by(user_id=user_id, **kwargs).all()
 
     def get_by_id(self, id: str, user_id: str) -> CreditCard | None:
         """Get a Credit Card by id."""
@@ -83,18 +84,27 @@ class TransactionRepository:
         """Rollback the current transaction."""
         self.session.rollback()
 
-    def get_all(self, user_id: str, params: Params = None) -> PaginatedResponse:
+    def get_all(
+        self,
+        user_id: str,
+        pagination_params: Params,
+        filters: dict,
+    ) -> PaginatedResponse:
         """Get all transactions based on specified filters."""
-        return (
-            self.session.query(Transaction)
-            .filter(Transaction.user_id == user_id)
-            .paginate(params)
+        transactions_query = self.session.query(Transaction).filter(
+            Transaction.user_id == user_id
         )
+
+        if filters:
+            transactions_query = transactions_query.apply_filters(Transaction, filters)
+
+        return transactions_query.paginate(pagination_params)
 
     def get_by_id(self, transaction_id: str, user_id: str) -> Transaction | None:
         """Get a Transaction by id."""
         return (
             self.session.query(Transaction)
+            .options(joinedload(Transaction.installments))
             .filter(Transaction.id == transaction_id, Transaction.user_id == user_id)
             .first()
         )
@@ -114,4 +124,9 @@ class TransactionRepository:
 
         self.session.add(transaction)
         self.session.commit()
-        return transaction
+
+        return (
+            self.session.query(Transaction)
+            .options(joinedload(Transaction.installments))
+            .get(transaction.id)
+        )

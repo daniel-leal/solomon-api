@@ -14,6 +14,7 @@ from app.solomon.transactions.domain.models import Installment, Transaction
 from app.solomon.transactions.domain.options import Kinds
 from app.solomon.transactions.presentation.models import (
     PaginatedTransactionResponseMapper,
+    TransactionFilters,
 )
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
 from app.tests.solomon.factories.installment_factory import InstallmentCreateFactory
@@ -356,6 +357,7 @@ class TestTransactionService:
     def test_get_transactions(self, transaction_service, mock_repository):
         user_id = "123"
         pagination_params = Params(page=1, size=5)
+        filters = TransactionFilters()
         mock_transactions = [
             TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
             TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
@@ -374,9 +376,53 @@ class TestTransactionService:
             total=3,
         )
 
-        result = transaction_service.get_transactions(user_id, pagination_params)
+        result = transaction_service.get_transactions(
+            user_id, pagination_params, filters
+        )
 
         assert result == expected_result
         mock_repository.get_all.assert_called_once_with(
-            user_id=user_id, params=pagination_params
+            user_id=user_id, pagination_params=pagination_params, filters={}
+        )
+
+    def test_get_transactions_with_filters(self, transaction_service, mock_repository):
+        user_id = "123"
+        pagination_params = Params(page=1, size=5)
+        category_id = str(uuid4())
+        filters = TransactionFilters(
+            is_fixed__eq=False,
+            kind__eq=Kinds.CREDIT.value,
+            category_id__eq=category_id,
+        )
+        mock_transactions = [
+            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
+            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
+            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
+        ]
+
+        mock_repository.get_all.return_value = PaginatedResponse(
+            items=mock_transactions, page=1, pages=1, size=5, total=3
+        )
+
+        expected_result = PaginatedTransactionResponseMapper.create(
+            items=mock_transactions,
+            page=1,
+            pages=1,
+            size=5,
+            total=3,
+        )
+
+        result = transaction_service.get_transactions(
+            user_id, pagination_params, filters
+        )
+
+        assert result == expected_result
+        mock_repository.get_all.assert_called_once_with(
+            user_id=user_id,
+            pagination_params=pagination_params,
+            filters={
+                "is_fixed__eq": False,
+                "kind__eq": Kinds.CREDIT.value,
+                "category_id__eq": category_id,
+            },
         )

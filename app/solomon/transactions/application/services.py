@@ -23,6 +23,7 @@ from app.solomon.transactions.presentation.models import (
     PaginatedTransactionResponseMapper,
     Transaction,
     TransactionCreate,
+    TransactionFilters,
     TransactionResponseMapper,
 )
 
@@ -217,7 +218,10 @@ class TransactionService:
         return TransactionResponseMapper.create(transaction=transaction)
 
     def get_transactions(
-        self, user_id: str, params: Params = None
+        self,
+        user_id: str,
+        pagination_params: Params = None,
+        filters: TransactionFilters = None,
     ) -> PaginatedTransactionResponseMapper:
         """
         Retrieve all transactions.
@@ -232,8 +236,9 @@ class TransactionService:
         List[Transaction]
             A list of all transactions.
         """
+        filters_dict = filters.model_dump(exclude_none=True)
         paginated_transaction = self.transaction_repository.get_all(
-            user_id=user_id, params=params
+            user_id=user_id, pagination_params=pagination_params, filters=filters_dict
         )
 
         return PaginatedTransactionResponseMapper.create(
