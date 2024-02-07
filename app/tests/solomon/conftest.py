@@ -13,6 +13,7 @@ from app.solomon.main import app
 from app.solomon.users.domain.models import User
 from app.tests.solomon.factories.category_factory import CategoryFactory
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
+from app.tests.solomon.factories.installment_factory import InstallmentFactory
 from app.tests.solomon.factories.transaction_factory import (
     TransactionCreateFactory,
     TransactionFactory,
@@ -102,3 +103,4 @@ register(CreditCardFactory)
 register(CategoryFactory)
 register(TransactionCreateFactory)
 register(TransactionFactory)
+register(InstallmentFactory)

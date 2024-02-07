@@ -14,6 +14,34 @@ Base = declarative_base()
 
 
 class CustomQuery(Query):
+    OPERATORS = {
+        "eq": lambda field, value: field == value,
+        "in": lambda field, value: field.in_(value),
+        "like": lambda field, value: field.like(value),
+        "ilike": lambda field, value: field.ilike(value),
+        "gt": lambda field, value: field > value,
+        "lt": lambda field, value: field < value,
+        "gte": lambda field, value: field >= value,
+        "lte": lambda field, value: field <= value,
+    }
+
+    def apply_filters(self, model, filters):
+        for attribute, value in filters.items():
+            if "__" in attribute:
+                field_name, operator_name = attribute.split("__")
+                operator = self.OPERATORS[operator_name]
+                if operator is None:
+                    raise ValueError(
+                        f"Invalid operator '{operator_name}' for field '{field_name}'"
+                    )
+            else:
+                raise ValueError(f"No operator specified for field '{attribute}'")
+
+            field = getattr(model, field_name)
+            self = self.filter(operator(field, value))
+
+        return self
+
     def paginate(self, params: Optional[AbstractParams]):
         return paginate(self, params)
 

@@ -196,3 +196,12 @@ class PaginatedTransactionResponseMapper(ResponseMapper):
             data=[TransactionMapper.create(transaction) for transaction in items],
             meta=PaginationMeta(page=page, pages=pages, size=size, total=total),
         )
+
+
+class TransactionFilters(BaseModel):
+    date__gt: Optional[datetime.date] = None
+    date__lt: Optional[datetime.date] = None
+    category_id__eq: Optional[str] = None
+    kind__eq: Optional[str] = None
+    is_fixed__eq: Optional[bool] = None
+    is_revenue__eq: Optional[bool] = None

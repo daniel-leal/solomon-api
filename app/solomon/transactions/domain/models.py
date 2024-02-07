@@ -45,7 +45,9 @@ class Transaction(BaseModel):
     recurring_day = Column(Integer, nullable=True)
     kind = Column(String(20), nullable=False)
 
-    installments = relationship("Installment", back_populates="transaction")
+    installments = relationship(
+        "Installment", back_populates="transaction", lazy="noload"
+    )
     user = relationship("User", back_populates="transactions")
     credit_card = relationship("CreditCard", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
