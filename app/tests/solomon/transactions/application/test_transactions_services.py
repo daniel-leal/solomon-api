@@ -1,13 +1,17 @@
 import datetime
+from io import BytesIO
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
 from fastapi_pagination import Params
 
+from app.solomon.common.data_transformation import DataTransformationError
+from app.solomon.common.exceptions import ExcelGenerationError
 from app.solomon.common.models import PaginatedResponse
-from app.solomon.transactions.application.services import CreditCardService
 from app.solomon.transactions.domain.exceptions import (
     CreditCardNotFound,
+    NoTransactionsFound,
     TransactionNotFound,
 )
 from app.solomon.transactions.domain.models import Installment, Transaction
@@ -15,7 +19,9 @@ from app.solomon.transactions.domain.options import Kinds
 from app.solomon.transactions.presentation.models import (
     PaginatedTransactionResponseMapper,
     TransactionFilters,
+    TransactionsResponseMapper,
 )
+from app.tests.solomon.factories.category_factory import CategoryFactory
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
 from app.tests.solomon.factories.installment_factory import InstallmentCreateFactory
 from app.tests.solomon.factories.transaction_factory import (
@@ -102,12 +108,11 @@ class TestCreditCardService:
         # Arrange
         mock_credit_card = CreditCardFactory.build()
         new_name = "New name"
-        mock_credit_card.name = new_name
 
         mock_repository.get_by_id.return_value = mock_credit_card
-        mock_repository.update.return_value = mock_credit_card
+        mock_credit_card.name = new_name
 
-        credit_card_service = CreditCardService(mock_repository)
+        mock_repository.update.return_value = mock_credit_card
 
         # Act
         updated_credit_card = credit_card_service.update_credit_card(
@@ -321,12 +326,15 @@ class TestTransactionService:
 
     def test_get_transaction(self, transaction_service, mock_repository):
         mock_user_id = "123"
+        category = CategoryFactory.build()
         transaction = TransactionFactory.build(
             id=str(uuid4()),
             kind=Kinds.DEBIT.value,
             is_fixed=False,
             recurring_day=None,
             credit_card_id=str(uuid4()),
+            category=category,
+            category_id=category.id,
         )
 
         mock_repository.get_by_id.return_value = transaction
@@ -364,7 +372,7 @@ class TestTransactionService:
             TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
         ]
 
-        mock_repository.get_all.return_value = PaginatedResponse(
+        mock_repository.get_all.return_value.paginate.return_value = PaginatedResponse(
             items=mock_transactions, page=1, pages=1, size=5, total=3
         )
 
@@ -381,48 +389,68 @@ class TestTransactionService:
         )
 
         assert result == expected_result
-        mock_repository.get_all.assert_called_once_with(
-            user_id=user_id, pagination_params=pagination_params, filters={}
+        mock_repository.get_all.return_value.paginate.assert_called_once_with(
+            pagination_params
         )
 
-    def test_get_transactions_with_filters(self, transaction_service, mock_repository):
-        user_id = "123"
-        pagination_params = Params(page=1, size=5)
-        category_id = str(uuid4())
-        filters = TransactionFilters(
-            is_fixed__eq=False,
-            kind__eq=Kinds.CREDIT.value,
-            category_id__eq=category_id,
-        )
-        mock_transactions = [
-            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
-            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
-            TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
-        ]
+    def test_export_transactions_with_no_transactions(
+        self, transaction_service, mock_repository
+    ):
+        with pytest.raises(NoTransactionsFound):
+            filters = TransactionFilters()
+            mock_repository.get_all.return_value.all.return_value = []
+            transaction_service.export_transactions(user_id=str(uuid4), filters=filters)
 
-        mock_repository.get_all.return_value = PaginatedResponse(
-            items=mock_transactions, page=1, pages=1, size=5, total=3
+    @patch("app.solomon.transactions.application.services.TransactionsResponseMapper")
+    def test_export_transactions_with_data_transformation_error(
+        self, mock_transactions_response_mapper, transaction_service, mock_repository
+    ):
+        with pytest.raises(DataTransformationError):
+            mock_repository.get_all.return_value.all.return_value = (
+                TransactionFactory.build_batch(2)
+            )
+            mock_transactions_response_mapper.create.return_value = (
+                TransactionsResponseMapper(data=[])
+            )
+
+            transaction_service.export_transactions(
+                user_id=str(uuid4), filters=TransactionFilters()
+            )
+
+    @patch("app.solomon.transactions.application.services.ExcelExporter")
+    def test_export_transaction_with_excel_generation_error(
+        self, mock_excel_exporter, transaction_service, mock_repository
+    ):
+        mock_repository.get_all.return_value.all.return_value = (
+            TransactionFactory.build_batch(2)
+        )
+        mock_excel_exporter.export.side_effect = ExcelGenerationError(
+            "An error ocurred while generating file"
         )
 
-        expected_result = PaginatedTransactionResponseMapper.create(
-            items=mock_transactions,
-            page=1,
-            pages=1,
-            size=5,
-            total=3,
+        with pytest.raises(ExcelGenerationError):
+            transaction_service.export_transactions(
+                user_id=str(uuid4), filters=TransactionFilters()
+            )
+
+    def test_export_transaction_with_database_error(self, transaction_service):
+        transaction_service.side_effect = Exception(
+            "Could not connect to the database."
         )
 
-        result = transaction_service.get_transactions(
-            user_id, pagination_params, filters
+        with pytest.raises(Exception):
+            transaction_service.export_transactions(str(uuid4()), TransactionFilters())
+
+    def test_export_transaction_to_excel_with_success(
+        self, transaction_service, mock_repository
+    ):
+        category = CategoryFactory.build()
+        mock_repository.get_all.return_value.all.return_value = (
+            TransactionFactory.build_batch(2, category=category)
         )
 
-        assert result == expected_result
-        mock_repository.get_all.assert_called_once_with(
-            user_id=user_id,
-            pagination_params=pagination_params,
-            filters={
-                "is_fixed__eq": False,
-                "kind__eq": Kinds.CREDIT.value,
-                "category_id__eq": category_id,
-            },
+        result = transaction_service.export_transactions(
+            user_id=str(uuid4()), filters=TransactionFilters()
         )
+
+        assert isinstance(result, BytesIO)

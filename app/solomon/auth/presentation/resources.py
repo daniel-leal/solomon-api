@@ -8,7 +8,7 @@ from app.solomon.auth.presentation.models import (
     LoginCreate,
     UserCreate,
     UserCreateResponse,
-    UserLoggedinResponse,
+    UserLoggedResponse,
     UserTokenAuthenticated,
 )
 from app.solomon.users.application.dependencies import get_user_service
@@ -57,7 +57,7 @@ async def register(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/login", response_model=UserLoggedinResponse)
+@router.post("/login", response_model=UserLoggedResponse)
 async def login(
     user: LoginCreate, auth_service: AuthService = Depends(get_auth_service)
 ) -> Response:
@@ -95,18 +95,18 @@ async def login(
 
 
 @router.get("/profile", response_model=UserTokenAuthenticated)
-async def profile(current_user: UserLoggedinResponse = Depends(get_current_user)):
+async def profile(current_user: UserLoggedResponse = Depends(get_current_user)):
     """
     Endpoint to get the profile of the currently authenticated user.
 
     Parameters
     ----------
-    current_user : UserLoggedinResponse
+    current_user : UserLoggedResponse
         The currently authenticated user, obtained from the `get_current_user` dependency.
 
     Returns
     -------
-    UserLoggedinResponse
+    UserLoggedResponse
         The profile of the currently authenticated user.
     """
 

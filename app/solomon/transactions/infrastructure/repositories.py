@@ -1,9 +1,10 @@
-from typing import List
+from typing import List, TypeVar
 
-from fastapi_pagination import Params
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.session import Session
+from sqlalchemy.sql import desc
 
-from app.solomon.common.models import PaginatedResponse
+from app.solomon.infrastructure.database import CustomQuery
 from app.solomon.transactions.domain.models import (
     Category,
     CreditCard,
@@ -11,11 +12,13 @@ from app.solomon.transactions.domain.models import (
     Transaction,
 )
 
+T = TypeVar("T")
+
 
 class CategoryRepository:
     """Categories repository. It is used to interact with the database."""
 
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
 
     def get_all(self) -> List[Category]:
@@ -30,7 +33,7 @@ class CategoryRepository:
 class CreditCardRepository:
     """CreditCards repository. It is used to interact with the database."""
 
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
 
     def get_all(self, user_id: str, **kwargs: dict) -> List[CreditCard]:
@@ -73,7 +76,7 @@ class CreditCardRepository:
 class TransactionRepository:
     """Transactions repository. It is used to interact with the database."""
 
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
 
     def commit(self):
@@ -84,21 +87,15 @@ class TransactionRepository:
         """Rollback the current transaction."""
         self.session.rollback()
 
-    def get_all(
-        self,
-        user_id: str,
-        pagination_params: Params,
-        filters: dict,
-    ) -> PaginatedResponse:
+    def get_all(self, user_id: str, filters: dict) -> CustomQuery[Transaction]:
         """Get all transactions based on specified filters."""
-        transactions_query = self.session.query(Transaction).filter(
-            Transaction.user_id == user_id
+        custom_query = CustomQuery(entities=Transaction, session=self.session)
+
+        return (
+            custom_query.filter(Transaction.user_id == user_id)
+            .apply_filters(Transaction, filters)
+            .order_by(desc(Transaction.date))
         )
-
-        if filters:
-            transactions_query = transactions_query.apply_filters(Transaction, filters)
-
-        return transactions_query.paginate(pagination_params)
 
     def get_by_id(self, transaction_id: str, user_id: str) -> Transaction | None:
         """Get a Transaction by id."""
@@ -128,5 +125,6 @@ class TransactionRepository:
         return (
             self.session.query(Transaction)
             .options(joinedload(Transaction.installments))
-            .get(transaction.id)
+            .filter_by(id=transaction.id)
+            .first()
         )

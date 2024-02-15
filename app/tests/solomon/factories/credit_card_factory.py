@@ -9,6 +9,7 @@ class CreditCardFactory(BaseFactory):
     class Meta:
         model = CreditCard
 
+    id = Faker("uuid4")
     name = Faker(
         "random_element", elements=["Itau", "Nubank", "Santander", "Banco do Brasil"]
     )

@@ -1,11 +1,17 @@
+from io import BytesIO
 from typing import List
 
 from fastapi_pagination import Params
 
+from app.solomon.common.data_transformation import DataTransformationError
+from app.solomon.common.exceptions import ExcelGenerationError
+from app.solomon.common.file_exporter import ExcelExporter
 from app.solomon.transactions.application.handlers import CreditCardTransactionHandler
+from app.solomon.transactions.application.transforms import ExportExcelTransformation
 from app.solomon.transactions.domain.exceptions import (
     CategoryNotFound,
     CreditCardNotFound,
+    NoTransactionsFound,
     TransactionNotFound,
 )
 from app.solomon.transactions.domain.models import (
@@ -25,6 +31,7 @@ from app.solomon.transactions.presentation.models import (
     TransactionCreate,
     TransactionFilters,
     TransactionResponseMapper,
+    TransactionsResponseMapper,
 )
 
 
@@ -220,8 +227,8 @@ class TransactionService:
     def get_transactions(
         self,
         user_id: str,
-        pagination_params: Params = None,
-        filters: TransactionFilters = None,
+        pagination_params: Params,
+        filters: TransactionFilters,
     ) -> PaginatedTransactionResponseMapper:
         """
         Retrieve all transactions.
@@ -236,10 +243,9 @@ class TransactionService:
         List[Transaction]
             A list of all transactions.
         """
-        filters_dict = filters.model_dump(exclude_none=True)
         paginated_transaction = self.transaction_repository.get_all(
-            user_id=user_id, pagination_params=pagination_params, filters=filters_dict
-        )
+            user_id=user_id, filters=filters.model_dump(exclude_none=True)
+        ).paginate(pagination_params)
 
         return PaginatedTransactionResponseMapper.create(
             items=paginated_transaction.items,
@@ -248,6 +254,52 @@ class TransactionService:
             size=paginated_transaction.size,
             total=paginated_transaction.total,
         )
+
+    def export_transactions(self, user_id: str, filters: TransactionFilters) -> BytesIO:
+        """
+        Export transactions to an Excel file.
+
+        Parameters:
+            user_id (str): The ID of the user whose transactions will be exported.
+            filters (TransactionFilters, optional): Filters to apply to the transactions.
+
+        Returns:
+            bytes: The content of the exported Excel file.
+
+        Raises:
+            NoTransactionsFound: If no transactions were found for the provided filters.
+            DataTransformationError: If an error occurs during data transformation.
+            ExcelGenerationError: If an error occurs during the generation of the Excel
+            file.
+            Exception: For any other unexpected errors.
+        """
+        try:
+            filters_dict = filters.model_dump(exclude_none=True)
+
+            transactions = self.transaction_repository.get_all(
+                user_id=user_id, filters=filters_dict
+            ).all()
+
+            if not transactions:
+                raise NoTransactionsFound(
+                    "No transactions were found for this filters!"
+                )
+
+            transactions_mapper = TransactionsResponseMapper.create(items=transactions)
+            dataframe_transactions = ExportExcelTransformation.transform_data(
+                transactions_mapper
+            )
+
+            excel_file = ExcelExporter.export(dataframe_transactions)
+            return excel_file
+        except (
+            NoTransactionsFound,
+            DataTransformationError,
+            ExcelGenerationError,
+        ) as e:
+            raise e
+        except Exception as e:
+            raise Exception(f"An unexpected error occurred: {e}")
 
     def _handle_transaction(self, transaction: TransactionCreate) -> Transaction:
         if transaction.kind == Kinds.CREDIT and not transaction.is_fixed:

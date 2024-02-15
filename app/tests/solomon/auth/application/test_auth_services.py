@@ -1,11 +1,11 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
 from app.solomon.auth.application.security import generate_hashed_password
 from app.solomon.auth.application.services import AuthService
 from app.solomon.auth.domain.exceptions import AuthenticationError
-from app.solomon.auth.presentation.models import LoginCreate, UserLoggedinResponse
+from app.solomon.auth.presentation.models import LoginCreate, UserLoggedResponse
 from app.solomon.users.infrastructure.repositories import UserRepository
 
 
@@ -25,14 +25,11 @@ def test_authenticate_success():
     result = auth_service.authenticate(login_create)
 
     # Assert
-    assert isinstance(result, UserLoggedinResponse)
+    assert isinstance(result, UserLoggedResponse)
     assert result.token_type == "bearer"
 
 
-@patch(
-    "app.solomon.auth.application.services.generate_token", return_value="test_token"
-)
-def test_authenticate_invalid_credentials(mock_generate_token):
+def test_authenticate_invalid_credentials():
     # Arrange
     mock_user = Mock()
     mock_user.hashed_password = generate_hashed_password("valid_password")

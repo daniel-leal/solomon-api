@@ -7,7 +7,7 @@ from app.solomon.auth.application.security import (
 from app.solomon.auth.domain.exceptions import AuthenticationError
 from app.solomon.auth.presentation.models import (
     LoginCreate,
-    UserLoggedinResponse,
+    UserLoggedResponse,
 )
 from app.solomon.users.infrastructure.repositories import UserRepository
 
@@ -18,7 +18,7 @@ class AuthService:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
-    def authenticate(self, login_create: LoginCreate) -> UserLoggedinResponse:
+    def authenticate(self, login_create: LoginCreate) -> UserLoggedResponse:
         """
         Authenticates a user and returns an access token
 
@@ -31,7 +31,7 @@ class AuthService:
 
         Returns
         -------
-        UserLoggedinResponse
+        UserLoggedResponse
             Access token
         """
         user = self.user_repository.get_by_username(login_create.username)
@@ -42,6 +42,6 @@ class AuthService:
 
         token = generate_token(user.id)
 
-        return UserLoggedinResponse(
+        return UserLoggedResponse(
             user_id=user.id, access_token=token, token_type="bearer"
         )
