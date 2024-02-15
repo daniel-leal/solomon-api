@@ -23,7 +23,9 @@ from app.solomon.transactions.presentation.models import (
 )
 from app.tests.solomon.factories.category_factory import CategoryFactory
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
-from app.tests.solomon.factories.installment_factory import InstallmentCreateFactory
+from app.tests.solomon.factories.installment_factory import (
+    InstallmentCreateFactory,
+)
 from app.tests.solomon.factories.transaction_factory import (
     TransactionCreateFactory,
     TransactionFactory,
@@ -36,14 +38,18 @@ class TestCreditCardService:
         credit_card = CreditCardFactory.build()
         mock_repository.get_by_id.return_value = credit_card
 
-        result = credit_card_service.get_credit_card("credit_card_id", mock_user_id)
+        result = credit_card_service.get_credit_card(
+            "credit_card_id", mock_user_id
+        )
 
         mock_repository.get_by_id.assert_called_once_with(
-            id="credit_card_id", user_id=mock_user_id
+            credit_card_id="credit_card_id", user_id=mock_user_id
         )
         assert result == credit_card
 
-    def test_get_invalid_credit_card(self, credit_card_service, mock_repository):
+    def test_get_invalid_credit_card(
+        self, credit_card_service, mock_repository
+    ):
         mock_user_id = "123"
         mock_repository.get_by_id.return_value = None
 
@@ -56,7 +62,10 @@ class TestCreditCardService:
 
     def test_get_credit_cards(self, credit_card_service, mock_repository):
         mock_user_id = "123"
-        mock_credit_cards = [CreditCardFactory.build(), CreditCardFactory.build()]
+        mock_credit_cards = [
+            CreditCardFactory.build(),
+            CreditCardFactory.build(),
+        ]
         mock_repository.get_all.return_value = mock_credit_cards
 
         result = credit_card_service.get_credit_cards(mock_user_id)
@@ -85,7 +94,9 @@ class TestCreditCardService:
             invoice_start_day=mock_credit_card.invoice_start_day,
         )
 
-    def test_create_invalid_credit_card(self, credit_card_service, mock_repository):
+    def test_create_invalid_credit_card(
+        self, credit_card_service, mock_repository
+    ):
         mock_credit_card = CreditCardFactory.build()
         mock_repository.create.return_value = None
 
@@ -121,9 +132,13 @@ class TestCreditCardService:
 
         # Assert
         assert updated_credit_card.name == new_name
-        mock_repository.update.assert_called_once_with(mock_credit_card, name=new_name)
+        mock_repository.update.assert_called_once_with(
+            mock_credit_card, name=new_name
+        )
 
-    def test_update_credit_card_not_found(self, credit_card_service, mock_repository):
+    def test_update_credit_card_not_found(
+        self, credit_card_service, mock_repository
+    ):
         # Arrange
         mock_credit_card = CreditCardFactory.build()
         mock_credit_card.user_id = "test_user_id"
@@ -148,9 +163,13 @@ class TestCreditCardService:
 
         # Assert
         assert deleted_credit_card == mock_credit_card
-        mock_repository.delete.assert_called_once_with(credit_card=mock_credit_card)
+        mock_repository.delete.assert_called_once_with(
+            credit_card=mock_credit_card
+        )
 
-    def test_delete_credit_card_not_found(self, credit_card_service, mock_repository):
+    def test_delete_credit_card_not_found(
+        self, credit_card_service, mock_repository
+    ):
         # Arrange
         mock_credit_card = CreditCardFactory.build()
         mock_credit_card.user_id = "test_user_id"
@@ -166,7 +185,12 @@ class TestCreditCardService:
 class TestTransactionService:
     @pytest.mark.parametrize(
         "kind",
-        [Kinds.PIX.value, Kinds.DEBIT.value, Kinds.CASH.value, Kinds.TRANSFER.value],
+        [
+            Kinds.PIX.value,
+            Kinds.DEBIT.value,
+            Kinds.CASH.value,
+            Kinds.TRANSFER.value,
+        ],
     )
     def test_create_recurrent_transaction(
         self, kind, transaction_service, mock_repository
@@ -296,7 +320,7 @@ class TestTransactionService:
         assert installments[2].date == datetime.date(2024, 2, 24)
         assert installments[2].amount == 100.25
 
-    @pytest.mark.parametrize("kind", [kind.value for kind in Kinds])
+    @pytest.mark.parametrize("kind", [kind for kind in Kinds])
     def test_create_invalid_recurrent_transaction(self, kind):
         with pytest.raises(ValueError):
             TransactionCreateFactory.build(
@@ -339,7 +363,9 @@ class TestTransactionService:
 
         mock_repository.get_by_id.return_value = transaction
 
-        result = transaction_service.get_transaction("transaction_id", mock_user_id)
+        result = transaction_service.get_transaction(
+            "transaction_id", mock_user_id
+        )
 
         mock_repository.get_by_id.assert_called_once_with(
             transaction_id="transaction_id", user_id=mock_user_id
@@ -351,7 +377,9 @@ class TestTransactionService:
         assert result.data.credit_card_id == transaction.credit_card_id
         assert result.data.recurring_day == transaction.recurring_day
 
-    def test_get_invalid_transaction(self, transaction_service, mock_repository):
+    def test_get_invalid_transaction(
+        self, transaction_service, mock_repository
+    ):
         mock_user_id = "123"
         mock_repository.get_by_id.return_value = None
 
@@ -372,8 +400,10 @@ class TestTransactionService:
             TransactionFactory.build(id=str(uuid4), category_id=str(uuid4)),
         ]
 
-        mock_repository.get_all.return_value.paginate.return_value = PaginatedResponse(
-            items=mock_transactions, page=1, pages=1, size=5, total=3
+        mock_repository.get_all.return_value.paginate.return_value = (
+            PaginatedResponse(
+                items=mock_transactions, page=1, pages=1, size=5, total=3
+            )
         )
 
         expected_result = PaginatedTransactionResponseMapper.create(
@@ -399,11 +429,18 @@ class TestTransactionService:
         with pytest.raises(NoTransactionsFound):
             filters = TransactionFilters()
             mock_repository.get_all.return_value.all.return_value = []
-            transaction_service.export_transactions(user_id=str(uuid4), filters=filters)
+            transaction_service.export_transactions(
+                user_id=str(uuid4), filters=filters
+            )
 
-    @patch("app.solomon.transactions.application.services.TransactionsResponseMapper")
+    @patch(
+        "app.solomon.transactions.application.services.TransactionsResponseMapper"
+    )
     def test_export_transactions_with_data_transformation_error(
-        self, mock_transactions_response_mapper, transaction_service, mock_repository
+        self,
+        mock_transactions_response_mapper,
+        transaction_service,
+        mock_repository,
     ):
         with pytest.raises(DataTransformationError):
             mock_repository.get_all.return_value.all.return_value = (
@@ -425,7 +462,7 @@ class TestTransactionService:
             TransactionFactory.build_batch(2)
         )
         mock_excel_exporter.export.side_effect = ExcelGenerationError(
-            "An error ocurred while generating file"
+            "An error occurred while generating file"
         )
 
         with pytest.raises(ExcelGenerationError):
@@ -439,7 +476,9 @@ class TestTransactionService:
         )
 
         with pytest.raises(Exception):
-            transaction_service.export_transactions(str(uuid4()), TransactionFilters())
+            transaction_service.export_transactions(
+                str(uuid4()), TransactionFilters()
+            )
 
     def test_export_transaction_to_excel_with_success(
         self, transaction_service, mock_repository

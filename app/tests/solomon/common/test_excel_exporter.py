@@ -27,5 +27,6 @@ class TestExcelExporter:
         except ExcelGenerationError as e:
             assert (
                 str(e)
-                == "Error generating Excel file: 'list' object has no attribute 'to_excel'"
+                == "Error generating Excel file: 'list' object has no attribute "
+                   "'to_excel'"
             )

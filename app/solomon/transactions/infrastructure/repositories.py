@@ -1,3 +1,5 @@
+"""Transactions Repositories Module"""
+
 from typing import List, TypeVar
 
 from sqlalchemy.orm import joinedload
@@ -25,9 +27,9 @@ class CategoryRepository:
         """Get all Credit Cards."""
         return self.session.query(Category).all()
 
-    def get_by_id(self, id: str) -> Category | None:
+    def get_by_id(self, credit_card_id: str) -> Category | None:
         """Get a Credit Card by id."""
-        return self.session.query(Category).filter_by(id=id).first()
+        return self.session.query(Category).filter_by(id=credit_card_id).first()
 
 
 class CreditCardRepository:
@@ -38,13 +40,20 @@ class CreditCardRepository:
 
     def get_all(self, user_id: str, **kwargs: dict) -> List[CreditCard]:
         """Get all Credit Cards."""
-        return self.session.query(CreditCard).filter_by(user_id=user_id, **kwargs).all()
 
-    def get_by_id(self, id: str, user_id: str) -> CreditCard | None:
+        return (
+            self.session.query(CreditCard)
+            .filter_by(user_id=user_id, **kwargs)
+            .all()
+        )
+
+    def get_by_id(self, credit_card_id: str, user_id: str) -> CreditCard | None:
         """Get a Credit Card by id."""
         return (
             self.session.query(CreditCard)
-            .filter(CreditCard.id == id, CreditCard.user_id == user_id)
+            .filter(
+                CreditCard.id == credit_card_id, CreditCard.user_id == user_id
+            )
             .first()
         )
 
@@ -97,12 +106,16 @@ class TransactionRepository:
             .order_by(desc(Transaction.date))
         )
 
-    def get_by_id(self, transaction_id: str, user_id: str) -> Transaction | None:
+    def get_by_id(
+        self, transaction_id: str, user_id: str
+    ) -> Transaction | None:
         """Get a Transaction by id."""
         return (
             self.session.query(Transaction)
             .options(joinedload(Transaction.installments))
-            .filter(Transaction.id == transaction_id, Transaction.user_id == user_id)
+            .filter(
+                Transaction.id == transaction_id, Transaction.user_id == user_id
+            )
             .first()
         )
 
@@ -115,7 +128,7 @@ class TransactionRepository:
 
     def create_with_installments(
         self, transaction: Transaction, installments: List[Installment]
-    ) -> Transaction:
+    ) -> Transaction | None:
         """Create a new Transaction along with its associated Installments."""
         transaction.installments = installments
 

@@ -77,7 +77,7 @@ async def export_transactions(
 
         return StreamingResponse(
             excel_bytes,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", # noqa
             headers={"Content-Disposition": "attachment; filename=transactions.xlsx"},
         )
     except (
@@ -145,10 +145,14 @@ async def get_transactions(
         Depends(get_transaction_service)
     current_user : UserTokenAuthenticated, optional
         The current user, by default Depends(get_current_user)
+    pagination: Params
+        The pagination parameters
+    filters: TransactionFilters
+        The filters to be applied
 
     Returns
     -------
-    List[Transaction]
+    PaginatedTransactionResponseMapper
         The retrieved transactions.
     """
     paginated_transactions = transaction_service.get_transactions(

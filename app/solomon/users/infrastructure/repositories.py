@@ -7,9 +7,9 @@ class UserRepository:
     def __init__(self, session):
         self.session = session
 
-    def get_by_id(self, id) -> User | None:
+    def get_by_id(self, user_id) -> User | None:
         """Get a user by id."""
-        return self.session.query(User).filter_by(id=id).first()
+        return self.session.query(User).filter_by(id=user_id).first()
 
     def get_by_email(self, email) -> User | None:
         """Get a user by email."""

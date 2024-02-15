@@ -9,6 +9,7 @@ from app.solomon.users.domain.models import User
 from app.solomon.users.infrastructure.repositories import UserRepository
 
 
+# noinspection SpellCheckingInspection
 def test_create_user():
     # Arrange
     user_data = UserCreate(
@@ -36,6 +37,7 @@ def test_create_user():
     assert result.email == user_data.email
 
 
+# noinspection SpellCheckingInspection
 def test_create_user_already_exists():
     # Arrange
     user_data = UserCreate(

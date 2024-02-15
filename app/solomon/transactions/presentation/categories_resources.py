@@ -1,3 +1,5 @@
+"""Categories Endpoints"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
@@ -62,6 +64,8 @@ async def get_category(
         If no category with the given id exists.
     """
     try:
-        return category_service.get_category(id=category_id)
+        return category_service.get_category(category_id=category_id)
     except CategoryNotFound as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        )

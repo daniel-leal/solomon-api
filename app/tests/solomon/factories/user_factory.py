@@ -5,7 +5,11 @@ from app.tests.solomon.factories.base_factory import BaseFactory
 
 
 class UserFactory(BaseFactory):
+    """User factory model"""
+
     class Meta:
+        """User db model"""
+
         model = User
 
     email = factory.Faker("email")

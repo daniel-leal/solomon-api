@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.solomon.auth.application.dependencies import get_auth_service
 from app.solomon.auth.application.security import get_current_user
@@ -18,12 +18,10 @@ from app.solomon.users.domain.exceptions import UserAlreadyExists
 router = APIRouter()
 
 
-@router.post(
-    "/register", response_model=UserCreateResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     user: UserCreate, user_service: UserService = Depends(get_user_service)
-) -> Response:
+) -> UserCreateResponse:
     """
     Create a new user.
 
@@ -57,10 +55,10 @@ async def register(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/login", response_model=UserLoggedResponse)
+@router.post("/login")
 async def login(
     user: LoginCreate, auth_service: AuthService = Depends(get_auth_service)
-) -> Response:
+) -> UserLoggedResponse:
     """
     Login a user.
 
@@ -72,8 +70,8 @@ async def login(
     ----------
     user : UserLogin
         The user to be created.
-    user_service : UserService, optional
-        The service to be used to create the user, by default Depends(get_user_service)
+    auth_service : AuthService
+        The service to be used to authenticate the user
 
     Returns
     -------
@@ -86,28 +84,30 @@ async def login(
         If the username or password is invalid.
     """
     try:
-        user_loggedin = auth_service.authenticate(user)
-        return user_loggedin
+        logged_user = auth_service.authenticate(user)
+        return logged_user
     except AuthenticationError as e:
         raise HTTPException(status_code=401, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/profile", response_model=UserTokenAuthenticated)
-async def profile(current_user: UserLoggedResponse = Depends(get_current_user)):
+@router.get("/profile")
+async def profile(
+    current_user: UserTokenAuthenticated = Depends(get_current_user),
+) -> UserTokenAuthenticated:
     """
     Endpoint to get the profile of the currently authenticated user.
 
     Parameters
     ----------
     current_user : UserLoggedResponse
-        The currently authenticated user, obtained from the `get_current_user` dependency.
+        The currently authenticated user, obtained from the `get_current_user`
+        dependency.
 
     Returns
     -------
     UserLoggedResponse
         The profile of the currently authenticated user.
     """
-
     return current_user

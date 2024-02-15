@@ -24,10 +24,8 @@ class AuthService:
 
         Parameters
         ----------
-        username : str
-            Username
-        password : str
-            Password
+        login_create : LoginCreate
+            user to be created
 
         Returns
         -------

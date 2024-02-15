@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 
 from dateutil.relativedelta import relativedelta
@@ -14,12 +14,17 @@ logger = logging.getLogger(__name__)
 
 
 class CreditCardTransactionHandler:
-    """Credit card transaction handler. It is used to create a transaction and its installments."""
+    """
+    Credit card transaction handler. It is used to create a transaction and its
+    installments.
+    """
 
     def __init__(self, transaction_repository):
         self.transaction_repository = transaction_repository
 
-    def process_transaction(self, transaction: TransactionCreate) -> Transaction:
+    def process_transaction(
+        self, transaction: TransactionCreate
+    ) -> Transaction:
         """
         Create a transaction and its installments
 
@@ -40,8 +45,16 @@ class CreditCardTransactionHandler:
         """
         try:
             installments = InstallmentHandler.generate_installments(transaction)
-            transaction_model = self._map_transaction_to_domain(transaction)
-            installments_models = self._map_installments_to_domain(installments)
+            transaction_model = (
+                CreditCardTransactionHandler._map_transaction_to_domain(
+                    transaction
+                )
+            )  # noqa
+            installments_models = (
+                CreditCardTransactionHandler._map_installments_to_domain(
+                    installments
+                )
+            )  # noqa
 
             response = self.transaction_repository.create_with_installments(
                 transaction=transaction_model, installments=installments_models
@@ -53,15 +66,24 @@ class CreditCardTransactionHandler:
             logger.error(e)
             raise
 
-    def _map_transaction_to_domain(self, transaction: TransactionCreate) -> Transaction:
+    @staticmethod
+    def _map_transaction_to_domain(
+        transaction: TransactionCreate,
+    ) -> Transaction:
         return Transaction(
-            **transaction.model_dump(exclude_none=True, exclude=["installments_number"])
+            **transaction.model_dump(
+                exclude_none=True, exclude={"installments_number"}
+            )
         )
 
+    @staticmethod
     def _map_installments_to_domain(
-        self, installments: List[InstallmentCreate]
+        installments: List[InstallmentCreate],
     ) -> List[Installment]:
-        return [Installment(**installment.model_dump()) for installment in installments]
+        return [
+            Installment(**installment.model_dump())
+            for installment in installments
+        ]
 
 
 class InstallmentHandler:
@@ -109,7 +131,7 @@ class InstallmentHandler:
 
     @classmethod
     def _generate_installment_dates(
-        cls, start_date: datetime, num_installments: int
+        cls, start_date: date, num_installments: int
     ) -> List[datetime]:
         dates = [start_date]
 

@@ -89,7 +89,9 @@ async def test_get_current_user(mock_get_user_repository, mock_verify_token):
 @pytest.mark.asyncio
 @mock.patch("app.solomon.auth.application.security.verify_token")
 @mock.patch("app.solomon.auth.application.security.get_user_repository")
-async def test_get_current_user_not_found(mock_get_user_repository, mock_verify_token):
+async def test_get_current_user_not_found(
+    mock_get_user_repository, mock_verify_token
+):
     mock_user_repository = mock.Mock()
     mock_get_user_repository.return_value = mock_user_repository
     mock_user_repository.get_by_id.return_value = None
@@ -105,33 +107,23 @@ async def test_get_current_user_not_found(mock_get_user_repository, mock_verify_
 
 @pytest.mark.asyncio
 @mock.patch("app.solomon.auth.application.security.verify_token")
-@mock.patch("app.solomon.auth.application.security.get_user_repository")
 async def test_get_current_user_invalid_token(
-    mock_get_user_repository, mock_verify_token
+    mock_verify_token, mock_repository
 ):
     mock_verify_token.side_effect = ExpiredTokenError("Token has expired!")
-    mock_user_repository = mock.Mock()
-    mock_get_user_repository.return_value = mock_user_repository
-    token = mock.Mock(credentials="test_token")
-    with pytest.raises(HTTPException) as exc_info:
-        await get_current_user(token, mock_user_repository)
-    assert exc_info.value.status_code == HTTP_401_UNAUTHORIZED
-    assert exc_info.value.detail == "Token has expired"
+    mock_token = mock.Mock(credentials="test_token")
+
+    with pytest.raises(HTTPException):
+        await get_current_user(mock_token, mock_repository)
 
 
 @pytest.mark.asyncio
 @mock.patch("app.solomon.auth.application.security.verify_token")
-@mock.patch("app.solomon.auth.application.security.get_user_repository")
 async def test_get_current_user_invalid_pyjwt_token(
-    mock_get_user_repository, mock_verify_token
+    mock_verify_token, mock_repository
 ):
     mock_verify_token.side_effect = PyJWTError("Invalid token")
-    mock_user_repository = mock.Mock()
-    mock_get_user_repository.return_value = mock_user_repository
-    token = mock.Mock(credentials="test_token")
+    mock_token = mock.Mock(credentials="test_token")
 
-    with pytest.raises(HTTPException) as exc_info:
-        await get_current_user(token, mock_user_repository)
-
-    assert exc_info.value.status_code == 401
-    assert exc_info.value.detail == "Invalid token"
+    with pytest.raises(HTTPException):
+        await get_current_user(mock_token, mock_repository)

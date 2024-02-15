@@ -37,11 +37,12 @@ class ExcelExporter(FileExporter):
             bytes: The exported Excel file content.
 
         Raises:
-            ExcelGenerationError: If an error occurs during the generation of the Excel file.
+            ExcelGenerationError: If an error occurs during the generation of the Excel
+            file.
         """
         excel_file = BytesIO()
         try:
-            data.to_excel(excel_file, index=False, sheet_name="Data", engine="openpyxl")
+            data.to_excel(excel_file, index=False, sheet_name="Data", engine="openpyxl") # noqa
             excel_file.seek(0)
             return excel_file
         except Exception as e:
