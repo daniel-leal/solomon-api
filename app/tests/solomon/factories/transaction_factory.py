@@ -15,7 +15,7 @@ class TransactionCreateFactory(BaseFactory):
         model = TransactionCreate
 
     description = FuzzyChoice(["iFood", "Uber", "Formosa", "Spotify"])
-    amount = FuzzyDecimal(0.01, 1000.00, precision=2)
+    amount = FuzzyDecimal(0.01, 1000.00)
     date = Faker("date")
     is_fixed = False
     is_revenue = False
@@ -31,7 +31,7 @@ class TransactionFactory(BaseFactory):
 
     id = Faker("uuid4")
     description = FuzzyChoice(["iFood", "Uber", "Formosa", "Spotify"])
-    amount = FuzzyDecimal(0.01, 1000.00, precision=2)
+    amount = FuzzyDecimal(0.01, 1000.00)
     date = Faker("date")
     is_fixed = False
     is_revenue = False

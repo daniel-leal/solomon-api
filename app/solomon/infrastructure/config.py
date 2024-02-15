@@ -1,3 +1,5 @@
+"""App CONFIG ENVS"""
+
 import os
 
 from dotenv import load_dotenv

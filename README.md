@@ -23,7 +23,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 - 🐍 Python 3.11
 - 🐳 Docker / Docker Compose
-- 🐘 PostgreSQL 12.1
+- 🐘 PostgresSQL 12.1
 
 ### 💾 Database ER
 

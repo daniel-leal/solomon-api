@@ -9,7 +9,11 @@ Session = scoped_session(
 
 
 class BaseFactory(factory.alchemy.SQLAlchemyModelFactory):
+    """Base class for factories"""
+
     class Meta:
+        """Base model for factories"""
+
         abstract = True
         sqlalchemy_session = Session
         sqlalchemy_session_persistence = "commit"

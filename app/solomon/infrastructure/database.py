@@ -1,3 +1,5 @@
+"""Database Infrastructure Module"""
+
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import uuid4
 
@@ -33,7 +35,41 @@ class CustomQuery(Query, Generic[T]):
     def all(self) -> List[T]:
         return super().all()
 
-    def apply_filters(self, model: T, filters: Dict[str, Any]) -> "CustomQuery[T]":
+    def apply_filters(
+        self, model: T, filters: Dict[str, Any]
+    ) -> "CustomQuery[T]":
+        """
+        Apply filters to the given model based on the provided dictionary of filters.
+
+        Parameters
+        ----------
+        model : T
+            The model to which filters will be applied.
+        filters : dict
+            A dictionary containing filters to be applied. Each key represents an
+            attribute of the model, and the corresponding value is the condition to
+            filter on that attribute.
+
+        Returns
+        -------
+        CustomQuery[T]
+            A CustomQuery instance representing the filtered result.
+
+        Raises
+        ------
+        ValueError
+            If an invalid operator is provided for a field or if no operator is
+            specified for a field.
+
+        Notes
+        -----
+        This method applies filters to the model based on the given dictionary. Each
+        filter is specified in the form of '<field>__<operator>', where <field> is the
+        attribute of the model and <operator> is the comparison operator. Supported
+        comparison operators include 'eq' (equal), 'neq' (not equal),
+        'gt' (greater than), 'lt' (less than), 'gte' (greater than or equal), and
+        'lte' (less than or equal).
+        """
         for attribute, value in filters.items():
             if "__" in attribute:
                 field_name, operator_name = attribute.split("__")
@@ -43,7 +79,9 @@ class CustomQuery(Query, Generic[T]):
                         f"Invalid operator '{operator_name}' for field '{field_name}'"
                     )
             else:
-                raise ValueError(f"No operator specified for field '{attribute}'")
+                raise ValueError(
+                    f"No operator specified for field '{attribute}'"
+                )
 
             field = getattr(model, field_name)
             operator_func = operator(field, value)
@@ -51,7 +89,30 @@ class CustomQuery(Query, Generic[T]):
 
         return self
 
-    def paginate(self, params: Optional[AbstractParams]) -> PaginatedResponse[T]:
+    def paginate(
+        self, params: Optional[AbstractParams]
+    ) -> PaginatedResponse[T]:
+        """
+        Paginate the current query.
+
+        Parameters
+        ----------
+        params : Optional[AbstractParams], optional
+            Parameters for pagination (default is None).
+
+        Returns
+        -------
+        PaginatedResponse[T]
+            A PaginatedResponse instance representing the paginated results.
+
+        Notes
+        -----
+        This method applies pagination to the current query using the provided
+        parameters. It returns a PaginatedResponse instance containing the paginated
+        results.
+
+        If no parameters are provided, default pagination parameters may be used.
+        """
         return paginate(self, params)
 
 
@@ -69,6 +130,7 @@ def get_repository(repo_class, session=None):
     return _get_repo
 
 
+# noinspection PyMethodParameters
 class BaseModel(Base):
     """Base model for all database models."""
 

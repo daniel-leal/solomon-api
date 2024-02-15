@@ -17,9 +17,11 @@ class DataTransformation(ABC):
         """
         Abstract method for data transformation.
 
-        Parameters:
+        Parameters
+        ----------
             raw_data: raw data to be transformed.
 
-        Returns:
+        Returns
+        -------
             pd.DataFrame: A DataFrame containing the transformed data.
         """

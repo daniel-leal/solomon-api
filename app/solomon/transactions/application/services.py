@@ -6,8 +6,12 @@ from fastapi_pagination import Params
 from app.solomon.common.data_transformation import DataTransformationError
 from app.solomon.common.exceptions import ExcelGenerationError
 from app.solomon.common.file_exporter import ExcelExporter
-from app.solomon.transactions.application.handlers import CreditCardTransactionHandler
-from app.solomon.transactions.application.transforms import ExportExcelTransformation
+from app.solomon.transactions.application.handlers import (
+    CreditCardTransactionHandler,
+)
+from app.solomon.transactions.application.transforms import (
+    ExportExcelTransformation,
+)
 from app.solomon.transactions.domain.exceptions import (
     CategoryNotFound,
     CreditCardNotFound,
@@ -58,7 +62,7 @@ class CreditCardService:
             The retrieved credit card.
         """
         credit_card = self.credit_card_repository.get_by_id(
-            id=credit_card_id, user_id=user_id
+            credit_card_id=credit_card_id, user_id=user_id
         )
 
         if not credit_card:
@@ -88,8 +92,8 @@ class CreditCardService:
 
         Parameters
         ----------
-        credit_card : CreditCard
-            The credit card to create.
+        **kwargs:
+            The credit card to be created.
 
         Returns
         -------
@@ -106,8 +110,10 @@ class CreditCardService:
 
         Parameters
         ----------
-        id : int
+        credit_card_id : str
             The ID of the credit card to update.
+        user_id: str
+            The ID of the current user
         **kwargs
             Arbitrary keyword arguments.
 
@@ -119,7 +125,9 @@ class CreditCardService:
         credit_card = self.get_credit_card(credit_card_id, user_id)
         return self.credit_card_repository.update(credit_card, **kwargs)
 
-    def delete_credit_card(self, credit_card_id: str, user_id: str) -> CreditCard:
+    def delete_credit_card(
+        self, credit_card_id: str, user_id: str
+    ) -> CreditCard:
         """
         Delete a credit card by its ID.
 
@@ -157,9 +165,9 @@ class CategoryService:
         categories = self.category_repository.get_all()
         return CategoriesResponseMapper.create(categories=categories)
 
-    def get_category(self, id: str) -> CategoryResponseMapper:
+    def get_category(self, category_id: str) -> CategoryResponseMapper:
         """Get a category by id."""
-        category = self.category_repository.get_by_id(id)
+        category = self.category_repository.get_by_id(category_id)
 
         if not category:
             raise CategoryNotFound("Category not found.")
@@ -168,6 +176,8 @@ class CategoryService:
 
 
 class TransactionService:
+    """Transactions Services class"""
+
     def __init__(self, transaction_repository: TransactionRepository) -> None:
         self.transaction_repository = transaction_repository
 
@@ -237,11 +247,15 @@ class TransactionService:
         ----------
         user_id : str
             The ID of the user that owns the transactions.
+        pagination_params: Params
+            The pagination parameters
+        filters: TransactionFilters
+            The filters to be applied to query
 
         Returns
         -------
-        List[Transaction]
-            A list of all transactions.
+        PaginatedTransactionResponseMapper
+            A paginated list of filtered transactions.
         """
         paginated_transaction = self.transaction_repository.get_all(
             user_id=user_id, filters=filters.model_dump(exclude_none=True)
@@ -255,18 +269,25 @@ class TransactionService:
             total=paginated_transaction.total,
         )
 
-    def export_transactions(self, user_id: str, filters: TransactionFilters) -> BytesIO:
+    def export_transactions(
+        self, user_id: str, filters: TransactionFilters
+    ) -> BytesIO:
         """
         Export transactions to an Excel file.
 
-        Parameters:
-            user_id (str): The ID of the user whose transactions will be exported.
-            filters (TransactionFilters, optional): Filters to apply to the transactions.
+        Parameters
+        ----------
+            user_id: str
+                The ID of the user whose transactions will be exported.
+            filters: TransactionFilters (Optional)
+                Filters to apply to the transactions.
 
-        Returns:
+        Returns
+        -------
             bytes: The content of the exported Excel file.
 
-        Raises:
+        Raises
+        ------
             NoTransactionsFound: If no transactions were found for the provided filters.
             DataTransformationError: If an error occurs during data transformation.
             ExcelGenerationError: If an error occurs during the generation of the Excel
@@ -285,7 +306,9 @@ class TransactionService:
                     "No transactions were found for this filters!"
                 )
 
-            transactions_mapper = TransactionsResponseMapper.create(items=transactions)
+            transactions_mapper = TransactionsResponseMapper.create(
+                items=transactions
+            )
             dataframe_transactions = ExportExcelTransformation.transform_data(
                 transactions_mapper
             )
@@ -301,7 +324,9 @@ class TransactionService:
         except Exception as e:
             raise Exception(f"An unexpected error occurred: {e}")
 
-    def _handle_transaction(self, transaction: TransactionCreate) -> Transaction:
+    def _handle_transaction(
+        self, transaction: TransactionCreate
+    ) -> Transaction:
         if transaction.kind == Kinds.CREDIT and not transaction.is_fixed:
             handler = CreditCardTransactionHandler(self.transaction_repository)
             return handler.process_transaction(transaction)

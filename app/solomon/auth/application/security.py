@@ -5,7 +5,7 @@ from typing import Any
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jwt import PyJWTError
 from starlette.status import HTTP_401_UNAUTHORIZED
 
@@ -81,7 +81,8 @@ def generate_token(
     payload = {
         "sub": user_id,
         "iat": datetime.datetime.utcnow(),
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_delta),
+        "exp": datetime.datetime.utcnow()
+        + datetime.timedelta(seconds=expires_delta),
     }
 
     token = jwt.encode(payload, secret_key, algorithm="HS256")
@@ -139,7 +140,7 @@ def verify_token(token: str, secret_key: str = SECRET_KEY) -> Any:
 
 
 async def get_current_user(
-    token: str = Depends(security),
+    token: HTTPAuthorizationCredentials = Depends(security),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> UserTokenAuthenticated:
     """
@@ -149,6 +150,8 @@ async def get_current_user(
     ----------
     token : str
         JWT token
+    user_repository: UserRepository
+        user repository
 
     Returns
     -------
@@ -157,8 +160,10 @@ async def get_current_user(
 
     Raises
     ------
-    HTTPException
-        If the token is invalid or expired
+    ExpiredTokenError
+        If the token is expired
+    (PyJWTError, KeyError)
+        If the token is invalid
     """
     try:
         payload = verify_token(token.credentials)
@@ -176,15 +181,5 @@ async def get_current_user(
             email=user.email,
             token=token.credentials,
         )
-    except ExpiredTokenError:
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Token has expired",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except (PyJWTError, KeyError):
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    except (ExpiredTokenError, PyJWTError, KeyError) as e:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=str(e))

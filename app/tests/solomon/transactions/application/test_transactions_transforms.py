@@ -5,8 +5,12 @@ import pandas as pd
 import pytest
 
 from app.solomon.common.data_transformation import DataTransformationError
-from app.solomon.transactions.application.transforms import ExportExcelTransformation
-from app.solomon.transactions.presentation.models import TransactionsResponseMapper
+from app.solomon.transactions.application.transforms import (
+    ExportExcelTransformation,
+)
+from app.solomon.transactions.presentation.models import (
+    TransactionsResponseMapper,
+)
 from app.tests.solomon.factories.category_factory import CategoryFactory
 from app.tests.solomon.factories.credit_card_factory import CreditCardFactory
 from app.tests.solomon.factories.transaction_factory import TransactionFactory

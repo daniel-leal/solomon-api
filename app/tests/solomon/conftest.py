@@ -6,9 +6,16 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
-from app.solomon.auth.application.security import generate_hashed_password, verify_token
+from app.solomon.auth.application.security import (
+    generate_hashed_password,
+    verify_token,
+)
 from app.solomon.infrastructure.config import DATABASE_URL
-from app.solomon.infrastructure.database import Base, CustomQuery, get_db_session
+from app.solomon.infrastructure.database import (
+    Base,
+    CustomQuery,
+    get_db_session,
+)
 from app.solomon.main import app
 from app.solomon.users.domain.models import User
 from app.tests.solomon.factories.category_factory import CategoryFactory
@@ -27,11 +34,13 @@ TestingSessionLocal = sessionmaker(
 
 
 def override_get_db():
+    db = None
     try:
         db = TestingSessionLocal()
         yield db
     finally:
-        db.close()
+        if db is not None:
+            db.close()
 
 
 app.dependency_overrides[get_db_session] = override_get_db
@@ -59,7 +68,8 @@ def current_user_token(client, user_factory) -> str:
     with db():
         password = "123456"
         user = user_factory.create(
-            username="John Doe", hashed_password=generate_hashed_password(password)
+            username="John Doe",
+            hashed_password=generate_hashed_password(password),
         )
 
         body = {
@@ -70,7 +80,6 @@ def current_user_token(client, user_factory) -> str:
         response = client.post("/auth/login", json=body)
 
         token = response.json()["access_token"]
-        user = db.session.query(User).filter_by(id=user.id).first()
 
         return token
 
@@ -88,7 +97,7 @@ def auth_client(client, current_user_token):
 
 
 @pytest.fixture
-def current_user(current_user_token) -> User:
+def current_user(current_user_token) -> User | None:
     with db():
         token = current_user_token
         user_id = verify_token(token)["sub"]

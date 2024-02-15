@@ -1,7 +1,8 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from app.solomon.auth.application.dependencies import get_auth_service
 from app.solomon.auth.application.security import generate_hashed_password
+from app.solomon.auth.domain.exceptions import ExpiredTokenError
 from app.solomon.auth.presentation.models import UserCreate
 from app.solomon.users.application.dependencies import get_user_service
 
@@ -16,7 +17,10 @@ def test_register_user(client):
     response = client.post("/auth/register", json=body)
 
     assert response.status_code == 201
-    assert response.json() == {"email": "john.doe@example.com", "username": "John Doe"}
+    assert response.json() == {
+        "email": "john.doe@example.com",
+        "username": "John Doe",
+    }
 
 
 def test_register_user_with_existing_username(client, user_factory):
@@ -73,7 +77,9 @@ def test_authenticate_user(client, user_factory):
     }
 
 
-def test_authenticate_user_with_invalid_username_or_password(client, user_factory):
+def test_authenticate_user_with_invalid_username_or_password(
+    client, user_factory
+):
     password = "123456"
     user_factory.create(
         username="John Doe", hashed_password=generate_hashed_password(password)
@@ -100,7 +106,9 @@ def test_register_exception(client):
     )
 
     mock_user_service = Mock()
-    mock_user_service.create_user = Mock(side_effect=Exception("Forced Exception"))
+    mock_user_service.create_user = Mock(
+        side_effect=Exception("Forced Exception")
+    )
 
     app.dependency_overrides[get_user_service] = lambda: mock_user_service
 
@@ -120,7 +128,9 @@ def test_login_exception(client):
     )
 
     mock_auth_service = Mock()
-    mock_auth_service.authenticate = Mock(side_effect=Exception("Forced Exception"))
+    mock_auth_service.authenticate = Mock(
+        side_effect=Exception("Forced Exception")
+    )
 
     app.dependency_overrides[get_auth_service] = lambda: mock_auth_service
 
@@ -147,7 +157,9 @@ def test_get_current_user(client, user_factory):
 
     token = response.json()["access_token"]
 
-    response = client.get("/auth/profile", headers={"Authorization": f"Bearer {token}"})
+    response = client.get(
+        "/auth/profile", headers={"Authorization": f"Bearer {token}"}
+    )
 
     assert response.status_code == 200
     assert response.json() == {
@@ -156,3 +168,31 @@ def test_get_current_user(client, user_factory):
         "email": user.email,
         "token": token,
     }
+
+
+@patch("app.solomon.auth.application.security.verify_token")
+def test_get_current_user_invalid_token(
+    mock_verify_token, client, user_factory, mock_auth_service
+):
+    password = "123456"
+    user = user_factory.create(
+        username="John Doe", hashed_password=generate_hashed_password(password)
+    )
+
+    body = {
+        "username": user.username,
+        "password": password,
+    }
+
+    response = client.post("/auth/login", json=body)
+
+    token = response.json()["access_token"]
+
+    mock_verify_token.side_effect = ExpiredTokenError("Token has expired!")
+
+    response = client.get(
+        "/auth/profile", headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Token has expired!"

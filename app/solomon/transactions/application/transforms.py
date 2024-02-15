@@ -4,14 +4,27 @@ from app.solomon.common.data_transformation import (
     DataTransformation,
     DataTransformationError,
 )
-from app.solomon.transactions.presentation.models import TransactionsResponseMapper
+from app.solomon.transactions.presentation.models import (
+    TransactionsResponseMapper,
+)
 
 
 class ExportExcelTransformation(DataTransformation):
-    __COLUMNS = ["Descrição", "Data", "Recorrência", "Categoria", "Cartão", "Valor"]
+    """Excel file transformation class"""
+
+    __COLUMNS = [
+        "Descrição",
+        "Data",
+        "Recorrência",
+        "Categoria",
+        "Cartão",
+        "Valor",
+    ]
 
     @classmethod
-    def transform_data(cls, raw_data: TransactionsResponseMapper) -> pd.DataFrame:
+    def transform_data(
+        cls, raw_data: TransactionsResponseMapper
+    ) -> pd.DataFrame:
         """
         Transform raw data into a pandas DataFrame.
 
@@ -27,7 +40,9 @@ class ExportExcelTransformation(DataTransformation):
         """
         try:
             if not raw_data.data:
-                raise DataTransformationError("No data provided for transformation")
+                raise DataTransformationError(
+                    "No data provided for transformation"
+                )
 
             data = []
 
