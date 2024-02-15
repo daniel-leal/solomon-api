@@ -15,5 +15,7 @@ app = FastAPI(
 init_routes(app)
 
 app.add_middleware(
-    DBSessionMiddleware, db_url=DATABASE_URL, session_args={"query_cls": CustomQuery}
+    DBSessionMiddleware,
+    db_url=DATABASE_URL,
+    session_args={"query_cls": CustomQuery},
 )

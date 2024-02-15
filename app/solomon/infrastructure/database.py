@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import uuid4
 
 from fastapi import Depends
@@ -10,10 +10,15 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Query, Session, declarative_base
 
+from app.solomon.common.models import PaginatedResponse
+
 Base = declarative_base()
 
 
-class CustomQuery(Query):
+T = TypeVar("T")
+
+
+class CustomQuery(Query, Generic[T]):
     OPERATORS = {
         "eq": lambda field, value: field == value,
         "in": lambda field, value: field.in_(value),
@@ -25,7 +30,10 @@ class CustomQuery(Query):
         "lte": lambda field, value: field <= value,
     }
 
-    def apply_filters(self, model, filters):
+    def all(self) -> List[T]:
+        return super().all()
+
+    def apply_filters(self, model: T, filters: Dict[str, Any]) -> "CustomQuery[T]":
         for attribute, value in filters.items():
             if "__" in attribute:
                 field_name, operator_name = attribute.split("__")
@@ -38,11 +46,12 @@ class CustomQuery(Query):
                 raise ValueError(f"No operator specified for field '{attribute}'")
 
             field = getattr(model, field_name)
-            self = self.filter(operator(field, value))
+            operator_func = operator(field, value)
+            self = self.filter(operator_func)
 
         return self
 
-    def paginate(self, params: Optional[AbstractParams]):
+    def paginate(self, params: Optional[AbstractParams]) -> PaginatedResponse[T]:
         return paginate(self, params)
 
 

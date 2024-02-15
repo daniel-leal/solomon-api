@@ -1,16 +1,23 @@
+import openpyxl  # noqa
 from fastapi import Depends
+from fastapi.exceptions import HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRouter
 from fastapi_pagination import Params
 from starlette import status
-from starlette.exceptions import HTTPException
 
 from app.solomon.auth.application.security import get_current_user
 from app.solomon.auth.presentation.models import (
     UserTokenAuthenticated,
 )
+from app.solomon.common.data_transformation import DataTransformationError
+from app.solomon.common.exceptions import ExcelGenerationError
 from app.solomon.transactions.application.dependencies import get_transaction_service
 from app.solomon.transactions.application.services import TransactionService
-from app.solomon.transactions.domain.exceptions import TransactionNotFound
+from app.solomon.transactions.domain.exceptions import (
+    NoTransactionsFound,
+    TransactionNotFound,
+)
 from app.solomon.transactions.presentation.models import (
     PaginatedTransactionResponseMapper,
     TransactionCreate,
@@ -21,9 +28,7 @@ from app.solomon.transactions.presentation.models import (
 transaction_router = APIRouter()
 
 
-@transaction_router.post(
-    "/", response_model=TransactionResponseMapper, status_code=status.HTTP_201_CREATED
-)
+@transaction_router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_transaction(
     transaction: TransactionCreate,
     transaction_service: TransactionService = Depends(get_transaction_service),
@@ -42,6 +47,7 @@ async def create_transaction(
     transaction_service : TransactionService, optional
         The service to be used to create the transaction, by default
         Depends(get_transaction_service)
+    current_user: Logged in user
 
     Returns
     -------
@@ -58,7 +64,35 @@ async def create_transaction(
         ) from e
 
 
-@transaction_router.get("/{transaction_id}", response_model=TransactionResponseMapper)
+@transaction_router.get("/export")
+async def export_transactions(
+    transaction_service: TransactionService = Depends(get_transaction_service),
+    current_user: UserTokenAuthenticated = Depends(get_current_user),
+    filters: TransactionFilters = Depends(),
+):
+    try:
+        excel_bytes = transaction_service.export_transactions(
+            user_id=current_user.id, filters=filters
+        )
+
+        return StreamingResponse(
+            excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=transactions.xlsx"},
+        )
+    except (
+        NoTransactionsFound,
+        DataTransformationError,
+        ExcelGenerationError,
+        Exception,
+    ) as e:
+        raise HTTPException(
+            detail=f"An error occurred while exporting transactions: {e}",
+            status_code=500,
+        )
+
+
+@transaction_router.get("/{transaction_id}")
 async def get_transaction(
     transaction_id: str,
     transaction_service: TransactionService = Depends(get_transaction_service),
@@ -101,8 +135,8 @@ async def get_transactions(
     """
     Retrieve all transactions.
 
-    This function receives a TransactionService instance and a UserTokenAuthenticated instance,
-    then tries to retrieve all transactions using the provided service.
+    This function receives a TransactionService instance and a UserTokenAuthenticated
+    instance, then tries to retrieve all transactions using the provided service.
 
     Parameters
     ----------
@@ -117,4 +151,8 @@ async def get_transactions(
     List[Transaction]
         The retrieved transactions.
     """
-    return transaction_service.get_transactions(current_user.id, pagination, filters)
+    paginated_transactions = transaction_service.get_transactions(
+        current_user.id, pagination, filters
+    )
+
+    return paginated_transactions

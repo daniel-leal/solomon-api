@@ -1,6 +1,8 @@
-from typing import Any, List, Optional
+from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel
+
+T = TypeVar("T")
 
 
 class PaginationMeta(BaseModel):
@@ -27,14 +29,14 @@ class PaginationMeta(BaseModel):
     total: int
 
 
-class PaginatedResponse(PaginationMeta):
+class PaginatedResponse(PaginationMeta, Generic[T]):
     """Paginated Response"""
 
-    items: List[Any]
+    items: List[T]
 
 
-class ResponseMapper(BaseModel):
+class ResponseMapper(BaseModel, Generic[T]):
     """Response Mapper"""
 
-    data: Optional[Any] = None
+    data: Optional[T] = None
     meta: Optional[PaginationMeta] = None

@@ -24,6 +24,6 @@ class LoginCreate(BaseModel):
     password: str
 
 
-class UserLoggedinResponse(BaseModel):
+class UserLoggedResponse(BaseModel):
     access_token: str
     token_type: str

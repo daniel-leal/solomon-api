@@ -1,8 +1,10 @@
 import datetime
+from io import BytesIO
 from unittest.mock import patch
 from urllib.parse import urlencode
 from uuid import uuid4
 
+import pandas as pd
 from fastapi.encoders import jsonable_encoder
 from fastapi_sqlalchemy import db
 
@@ -95,7 +97,8 @@ class TestTransactionsResources:
             ).model_dump()
 
             with patch(
-                "app.solomon.transactions.infrastructure.repositories.TransactionRepository.create_with_installments",
+                "app.solomon.transactions.infrastructure.repositories"
+                ".TransactionRepository.create_with_installments",
                 side_effect=Exception("Database Not Available"),
             ):
                 response = auth_client.post(
@@ -216,3 +219,32 @@ class TestTransactionsResources:
                     2023, 8, 30
                 )
                 assert item["is_revenue"] is False
+
+    def test_export_transactions_with_success(
+        self, auth_client, category_factory, transaction_factory, current_user
+    ):
+        category = category_factory.create(description="Home")
+        transaction_factory.create_batch(
+            10,
+            user=current_user,
+            is_fixed=True,
+            kind=Kinds.DEBIT.value,
+            category=category,
+            date=datetime.date(2023, 8, 15),
+            is_revenue=False,
+        )
+
+        response = auth_client.get("/transactions/export")
+
+        downloaded_file = BytesIO(response.content)
+        exported_file = pd.read_excel(downloaded_file)
+
+        assert isinstance(response.content, bytes)
+        assert len(exported_file) == 10
+
+    def test_export_transactions_with_failure(self, auth_client, transaction_service):
+        transaction_service.side_effect = Exception("An error occurred")
+
+        response = auth_client.get("/transactions/export")
+
+        assert response.status_code == 500

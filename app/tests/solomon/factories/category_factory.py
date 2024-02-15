@@ -8,6 +8,7 @@ class CategoryFactory(BaseFactory):
     class Meta:
         model = Category
 
+    id = Faker("uuid4")
     description = Faker(
         "random_element", elements=["Alimentação", "Transporte", "Saúde"]
     )

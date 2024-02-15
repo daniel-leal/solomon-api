@@ -47,7 +47,7 @@ def clear_data(engine: Engine):
 
 @pytest.fixture
 def client():
-    with TestClient(app) as client:
+    with TestClient(app) as client, db():
         yield client
 
     # delete all data after each test
@@ -79,7 +79,7 @@ def current_user_token(client, user_factory) -> str:
 def auth_client(client, current_user_token):
     token = current_user_token
     headers = {"Authorization": f"Bearer {token}"}
-    with TestClient(app) as client:
+    with TestClient(app) as client, db():
         client.headers = headers
         yield client
 

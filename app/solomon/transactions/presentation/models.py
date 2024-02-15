@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Optional
+from typing import List, Optional, Self
 
 from pydantic import (
     BaseModel,
@@ -131,6 +131,10 @@ class TransactionBase(BaseModel):
     user_id: Optional[str] = None
     credit_card_id: Optional[str] = None
 
+    # Relationships
+    credit_card: Optional[CreditCardMapper] = None
+    category: Optional[CategoryMapper] = None
+
 
 class TransactionCreate(TransactionBase):
     """Request model for creating a transaction"""
@@ -166,18 +170,18 @@ class TransactionMapper(TransactionBase):
     """Mapper model for transactions"""
 
     model_config = ConfigDict(
-        from_attributes=True, extra="allow", arbritrary_types_allowed=True
+        from_attributes=True, extra="allow"
     )
 
     id: str
     installments: Optional[list[Installment]] = None
 
     @classmethod
-    def create(cls, transaction: Transaction):
+    def create(cls, transaction: Transaction) -> Self:
         return cls.model_validate(transaction)
 
 
-class TransactionResponseMapper(ResponseMapper):
+class TransactionResponseMapper(ResponseMapper[TransactionMapper]):
     """Response model for transaction"""
 
     @classmethod
@@ -185,15 +189,25 @@ class TransactionResponseMapper(ResponseMapper):
         return cls(data=TransactionMapper.create(transaction))
 
 
-class PaginatedTransactionResponseMapper(ResponseMapper):
+class TransactionsResponseMapper(ResponseMapper[List[TransactionMapper]]):
+    """Response model for transactions"""
+
+    @classmethod
+    def create(cls, items: List[Transaction]) -> Self:
+        return cls(
+            data=[TransactionMapper.create(transaction) for transaction in items]
+        )
+
+
+class PaginatedTransactionResponseMapper(ResponseMapper[List[TransactionMapper]]):
     """Response model for paginated transactions"""
 
     @classmethod
     def create(
-        cls, items: List[Transaction], page: int, pages: int, size: int, total: int
+            cls, items: List[Transaction], page: int, pages: int, size: int, total: int
     ):
         return cls(
-            data=[TransactionMapper.create(transaction) for transaction in items],
+            data=TransactionsResponseMapper.create(items).data,
             meta=PaginationMeta(page=page, pages=pages, size=size, total=total),
         )
 
