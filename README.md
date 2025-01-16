@@ -25,10 +25,6 @@ These instructions will get you a copy of the project up and running on your loc
 - 🐳 Docker / Docker Compose
 - 🐘 PostgresSQL 12.1
 
-### 💾 Database ER
-
-![Alternative text describing the image](./docs/images/er.png)
-
 ### 🐳 Running the Project Locally with docker
 
 1. Clone the repository:
